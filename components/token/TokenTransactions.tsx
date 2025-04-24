@@ -1,17 +1,9 @@
-// components/token/TokenTransactions.tsx
-import React, { useState, useEffect, useRef } from "react";
-
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Pair } from "@/lib/tokenTypes";
+import { formatPriceWithColor, getBaseTokenValue, formatValueWithColor } from '@/lib/utils';
 interface Token {
   symbol: string;
   address: string;
-}
-
-interface Pair {
-  pairAddress: string;
-  baseToken?: Token;
-  quoteToken?: Token;
-  pairLabel?: string;
-  exchangeName?: string;
 }
 
 interface Transaction {
@@ -42,17 +34,14 @@ const TokenTransactions: React.FC<TokenTransactionsProps> = ({ pair, chainId }) 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [setCursor] = useState<string | null>(null);
   const [newTransactionIds, setNewTransactionIds] = useState<Set<string>>(new Set());
-  const [pairData, setPairData] = useState<PairData | null>(null);
-  const [tableHeight, setTableHeight] = useState(400); // Default height
+  const [, setPairData] = useState<PairData | null>(null);
+  const [tableHeight] = useState(400); // Default height
   const pollInterval = useRef<NodeJS.Timeout | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
   const resizeRef = useRef<HTMLDivElement>(null);
-  const startYRef = useRef(0);
-  const startHeightRef = useRef(0);
 
-  // Block explorer URLs by chain
+
   const blockExplorers: Record<string, string> = {
     "0x1": "https://etherscan.io",
     "0x38": "https://bscscan.com",
@@ -70,92 +59,38 @@ const TokenTransactions: React.FC<TokenTransactionsProps> = ({ pair, chainId }) 
 
   const isSolana = chainId === "solana";
 
-  // Initialize resize functionality
-  useEffect(() => {
-    const resizeHandle = resizeRef.current;
-    if (!resizeHandle) return;
-
-    const onMouseDown = (e: MouseEvent) => {
-      startYRef.current = e.clientY;
-      startHeightRef.current = tableHeight;
-      document.addEventListener("mousemove", onMouseMove);
-      document.addEventListener("mouseup", onMouseUp);
-    };
-
-    const onMouseMove = (e: MouseEvent) => {
-      const deltaY = startYRef.current - e.clientY;
-      const newHeight = Math.max(200, startHeightRef.current + deltaY);
-      setTableHeight(newHeight);
-    };
-
-    const onMouseUp = () => {
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-    };
-
-    resizeHandle.addEventListener("mousedown", onMouseDown);
-
-    return () => {
-      resizeHandle.removeEventListener("mousedown", onMouseDown);
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-    };
-  }, [tableHeight]);
-
-
-  useEffect(() => {
-    fetchTransactions();
-
-    // Set up polling interval for real-time updates
-    pollInterval.current = setInterval(fetchNewTransactions, 10000); // Poll every 10 seconds
-
-    return () => {
-      if (pollInterval.current) {
-        clearInterval(pollInterval.current);
-      }
-    };
-  }, [pair, chainId]);
-
-  // Fetch initial transactions
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     if (!pair || !pair.pairAddress) return;
-
+  
     setLoading(true);
     try {
       let url;
-
       if (isSolana) {
         url = `https://solana-gateway.moralis.io/token/mainnet/pairs/${pair.pairAddress}/swaps?order=DESC`;
       } else {
         url = `https://deep-index.moralis.io/api/v2.2/pairs/${pair.pairAddress}/swaps?chain=${chainId}&order=DESC`;
       }
-
-      console.log("Fetching transactions from:", url);
-
+  
       const response = await fetch(url, {
-        headers: {
+        headers: new Headers({
           accept: "application/json",
-          "X-API-Key": API_KEY,
-        },
+          "X-API-Key": API_KEY || "",
+        }),
       });
-
+  
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
       }
-
+  
       const data = await response.json();
-      console.log("Transactions response:", data);
-
       if (data) {
-        // Store pair data from API response
         setPairData({
           baseToken: data.baseToken || null,
           quoteToken: data.quoteToken || null,
           pairLabel: data.pairLabel || null,
         });
-
+  
         if (data.result) {
-          setCursor(data.cursor || null);
           setTransactions(data.result);
         }
       }
@@ -165,66 +100,62 @@ const TokenTransactions: React.FC<TokenTransactionsProps> = ({ pair, chainId }) 
     } finally {
       setLoading(false);
     }
-  };
+  }, [pair, chainId, isSolana]);  // Add isSolana as a dependency
 
-  // Fetch new transactions for real-time updates
-  const fetchNewTransactions = async () => {
-    if (!pair || !pair.pairAddress) return;
+ const fetchNewTransactions = useCallback(async () => {
+  if (!pair || !pair.pairAddress) return;
 
-    try {
-      let url;
-
-      if (isSolana) {
-        url = `https://solana-gateway.moralis.io/token/mainnet/pairs/${pair.pairAddress}/swaps?order=DESC`;
-      } else {
-        url = `https://deep-index.moralis.io/api/v2.2/pairs/${pair.pairAddress}/swaps?chain=${chainId}&order=DESC`;
-      }
-
-      const response = await fetch(url, {
-        headers: {
-          accept: "application/json",
-          "X-API-Key": API_KEY,
-        },
-      });
-
-      if (!response.ok) {
-        console.error(`API error during polling: ${response.status}`);
-        return;
-      }
-
-      const data = await response.json();
-
-      if (data && data.result && data.result.length > 0) {
-        // Check if there are new transactions
-        const currentTransactionIds = new Set(
-          transactions.map((tx) => tx.transactionHash)
-        );
-        const newTxs = data.result.filter(
-          (tx: Transaction) => !currentTransactionIds.has(tx.transactionHash)
-        );
-
-        if (newTxs.length > 0) {
-          console.log("New transactions found:", newTxs.length);
-
-          // Mark new transactions for animation
-          const newIds: Set<string> = new Set(newTxs.map((tx: Transaction) => tx.transactionHash));
-          setNewTransactionIds(newIds);
-
-          // Merge new transactions with existing ones (new transactions at the top)
-          setTransactions((prevTxs) => [...newTxs, ...prevTxs]);
-
-          // Remove animation class after 5 seconds
-          setTimeout(() => {
-            setNewTransactionIds(new Set());
-          }, 5000);
-        }
-      }
-    } catch (err) {
-      console.error("Error polling for new transactions:", err);
+  try {
+    let url;
+    if (isSolana) {
+      url = `https://solana-gateway.moralis.io/token/mainnet/pairs/${pair.pairAddress}/swaps?order=DESC`;
+    } else {
+      url = `https://deep-index.moralis.io/api/v2.2/pairs/${pair.pairAddress}/swaps?chain=${chainId}&order=DESC`;
     }
-  };
 
-  // Format time ago
+    const response = await fetch(url, {
+      headers: new Headers({
+        accept: "application/json",
+        "X-API-Key": API_KEY || "",
+      }),
+    });
+
+    if (!response.ok) {
+      console.error(`API error during polling: ${response.status}`);
+      return;
+    }
+
+    const data = await response.json();
+    if (data && data.result && data.result.length > 0) {
+      const currentTransactionIds = new Set(transactions.map((tx) => tx.transactionHash));
+      const newTxs = data.result.filter((tx: Transaction) => !currentTransactionIds.has(tx.transactionHash));
+
+      if (newTxs.length > 0) {
+        const newIds: Set<string> = new Set(newTxs.map((tx: Transaction) => tx.transactionHash));
+        setNewTransactionIds(newIds);
+        setTransactions((prevTxs) => [...newTxs, ...prevTxs]);
+
+        setTimeout(() => {
+          setNewTransactionIds(new Set());
+        }, 5000);
+      }
+    }
+  } catch (err) {
+    console.error("Error polling for new transactions:", err);
+  }
+}, [pair, chainId, transactions, isSolana]);  // Add isSolana as a dependency
+
+  useEffect(() => {
+    fetchTransactions();
+    pollInterval.current = setInterval(fetchNewTransactions, 10000);
+
+    return () => {
+      if (pollInterval.current) {
+        clearInterval(pollInterval.current);
+      }
+    };
+  }, [fetchTransactions, fetchNewTransactions]);
+
   const formatTimeAgo = (dateString: string | undefined) => {
     if (!dateString) return "";
 
@@ -252,41 +183,6 @@ const TokenTransactions: React.FC<TokenTransactionsProps> = ({ pair, chainId }) 
   };
 
   // Format prices with appropriate decimal places
-  const formatPrice = (price: string | number | undefined) => {
-    if (!price) return "$0.00";
-
-    const numPrice = typeof price === "string" ? parseFloat(price) : price;
-
-    if (numPrice < 0.0001) {
-      return "$" + numPrice.toFixed(8);
-    } else if (numPrice < 1) {
-      return "$" + numPrice.toFixed(6);
-    } else if (numPrice < 10000) {
-      return "$" + numPrice.toFixed(5);
-    } else {
-      return (
-        "$" +
-        numPrice.toLocaleString(undefined, {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })
-      );
-    }
-  };
-
-  // Get explorer URL for the transaction
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  const getExplorerUrl = (txHash: string) => {
-    const explorer = blockExplorers[chainId] || "";
-
-    if (!explorer) return "#";
-
-    if (isSolana) {
-      return `${explorer}/tx/${txHash}`;
-    } else {
-      return `${explorer}/tx/${txHash}`;
-    }
-  };
 
   // Get wallet explorer URL
   const getWalletExplorerUrl = (walletAddress: string) => {
@@ -326,53 +222,6 @@ const TokenTransactions: React.FC<TokenTransactionsProps> = ({ pair, chainId }) 
           color: "text-gray-500",
         };
     }
-  };
-
-  // Get value for base token column
-  const getBaseTokenValue = (tx: Transaction) => {
-    if (!tx.baseTokenAmount) return { value: 0, symbol: "" };
-
-    const value = parseFloat(tx.baseTokenAmount);
-    const symbol = pairData?.baseToken?.symbol || pair?.baseToken?.symbol || "";
-
-    return { value, symbol };
-  };
-
-  // Get value for quote token column
-  const getQuoteTokenValue = (tx: Transaction) => {
-    if (!tx.quoteTokenAmount) return { value: 0, symbol: "" };
-
-    const value = parseFloat(tx.quoteTokenAmount);
-    const absValue = Math.abs(value);
-    const symbol =
-      pairData?.quoteToken?.symbol || pair?.quoteToken?.symbol || "";
-
-    return { value: absValue, symbol };
-  };
-
-  // Format price with appropriate color
-  const formatPriceWithColor = (price: string | number | undefined) => {
-    if (!price) return { text: "-", color: "text-gray-500" };
-
-    const formattedPrice = formatPrice(price);
-    return {
-      text: formattedPrice,
-      color: "text-gray-200", // Default color
-    };
-  };
-
-  // Format value with color based on transaction type
-  const formatValueWithColor = (value: string | number | undefined, txType: string) => {
-    if (!value) return { text: "-", color: "text-gray-500" };
-
-    const formattedValue = formatNumber(value, 2);
-    const color =
-      txType.toLowerCase() === "buy" ? "text-prettyGreen" : "text-red-500";
-
-    return {
-      text: formattedValue,
-      color,
-    };
   };
 
   if (!pair) {
@@ -420,15 +269,15 @@ const TokenTransactions: React.FC<TokenTransactionsProps> = ({ pair, chainId }) 
           </thead>
           <tbody>
             {transactions.map((tx, index) => {
-              /* eslint-disable @typescript-eslint/no-explicit-any */
+    
               const txType = getTransactionType(tx.transactionType);
               const baseToken = getBaseTokenValue(tx);
-              const quoteToken = getQuoteTokenValue(tx);
+         
               const usdValue = formatValueWithColor(
-                tx.totalValueUsd,
+                isNaN(parseFloat(tx.totalValueUsd)) ? 0 : parseFloat(tx.totalValueUsd),
                 tx.transactionType
               );
-              const price = formatPriceWithColor(tx.baseTokenPriceUsd);
+              const price = formatPriceWithColor(isNaN(parseFloat(tx.baseTokenPriceUsd)) ? 0 : parseFloat(tx.baseTokenPriceUsd));
               const isNew = newTransactionIds.has(tx.transactionHash);
 
               // Create a unique key using transaction hash and index

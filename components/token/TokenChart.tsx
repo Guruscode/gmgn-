@@ -1,22 +1,7 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef } from "react";
+import { Pair } from "@/lib/tokenTypes";
+import Image from 'next/image';
 
-interface Token {
-  symbol: string;
-  address: string;
-  pairTokenType?: string;
-  logo?: string;
-}
-
-interface Pair {
-  pairAddress: string;
-  chainId: string;
-  exchangeName: string;
-  exchangeLogo?: string;
-  pairLabel: string;
-  volume24hrUsd?: number;
-  liquidityUsd?: number;
-  pair: Token[];
-}
 
 interface TokenChartProps {
   pair: Pair | null;
@@ -26,48 +11,72 @@ interface TokenChartProps {
 
 declare global {
   interface Window {
-    createMyWidget?: (id: string, options: any) => void;
+    createMyWidget?: (id: string, options: unknown) => void;
     destroyMyWidget?: (id: string) => void;
   }
 }
 
+// interface WidgetOptions {
+//   autoSize: boolean;
+//   chainId: string;
+//   pairAddress: string;
+//   defaultInterval: string;
+//   timeZone: string;
+//   backgroundColor: string;
+//   gridColor: string;
+//   textColor: string;
+//   candleUpColor: string;
+//   candleDownColor: string;
+//   borderColor: string;
+//   tooltipBackgroundColor: string;
+//   volumeUpColor: string;
+//   volumeDownColor: string;
+//   lineColor: string;
+//   locale: string;
+//   hideLeftToolbar: boolean;
+//   hideTopToolbar: boolean;
+//   hideBottomToolbar: boolean;
+// }
+
 const PRICE_CHART_ID = "price-chart-widget-container";
 
-const TokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame, onTimeFrameChange }) => {
-  const [priceType, setPriceType] = useState("price");
+const TokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame }) => {
+ 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Map our timeframe to chart widget timeframe format
-  const timeframeMap: Record<string, string> = {
-    "5m": "5",
-    "15m": "15",
-    "1h": "60",
-    "4h": "240",
-    "1d": "1D",
-  };
-
+  // const timeframeMap: Record<string, string> = {
+  //   "5m": "5",
+  //   "15m": "15",
+  //   "1h": "60",
+  //   "4h": "240",
+  //   "1d": "1D",
+  // };
+  
   useEffect(() => {
+    const timeframeMap: Record<string, string> = {
+      "5m": "5",
+      "15m": "15",
+      "1h": "60",
+      "4h": "240",
+      "1d": "1D",
+    };
+  
     if (!pair || !pair.pairAddress || typeof window === "undefined") return;
-
-    // Get the appropriate chain ID format for the chart widget
+  
     const getChartChainId = () => {
-      // For Solana pairs, use "solana" as the chain ID
       if (
         pair.chainId === "solana" ||
         pair.exchangeName?.toLowerCase().includes("solana")
       ) {
         return "solana";
       }
-
-      // For EVM chains, use the hex format
       return pair.chainId || "0x1";
     };
-
+  
     const loadWidget = () => {
       if (typeof window.createMyWidget === "function") {
-        // Get the correct chain ID format
         const chartChainId = getChartChainId();
-
+  
         window.createMyWidget(PRICE_CHART_ID, {
           autoSize: true,
           chainId: chartChainId,
@@ -75,7 +84,6 @@ const TokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame, onTimeFrameCha
           defaultInterval: timeframeMap[timeFrame] || "1D",
           timeZone:
             Intl.DateTimeFormat().resolvedOptions().timeZone ?? "Etc/UTC",
-
           backgroundColor: "#0f1118",
           gridColor: "#1D2330",
           textColor: "#7F85A1",
@@ -91,23 +99,16 @@ const TokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame, onTimeFrameCha
           hideTopToolbar: false,
           hideBottomToolbar: false,
         });
-
-        console.log(
-          `Chart initialized with chainId: ${chartChainId}, pairAddress: ${pair.pairAddress}`
-        );
-      } else {
-        console.error("createMyWidget function is not defined.");
       }
     };
-
-    // Clear any existing chart before creating a new one
+  
     const existingWidget = document.getElementById(PRICE_CHART_ID);
     if (existingWidget) {
       while (existingWidget.firstChild) {
         existingWidget.removeChild(existingWidget.firstChild);
       }
     }
-
+  
     if (!document.getElementById("moralis-chart-widget")) {
       const script = document.createElement("script");
       script.id = "moralis-chart-widget";
@@ -117,7 +118,6 @@ const TokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame, onTimeFrameCha
       script.onload = loadWidget;
       script.onerror = () => {
         console.error("Failed to load the chart widget script.");
-        // Show error message in the chart container
         const chartContainer = document.getElementById(PRICE_CHART_ID);
         if (chartContainer) {
           chartContainer.innerHTML = `<div class="h-full flex items-center justify-center text-dex-text-secondary">
@@ -129,15 +129,14 @@ const TokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame, onTimeFrameCha
     } else {
       loadWidget();
     }
-
-    // Cleanup function
+  
     return () => {
-      // If there's a cleanup method exposed by the widget, call it here
       if (typeof window.destroyMyWidget === "function") {
         window.destroyMyWidget(PRICE_CHART_ID);
       }
     };
   }, [pair, timeFrame]);
+  
 
   if (!pair) {
     return (
@@ -147,18 +146,6 @@ const TokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame, onTimeFrameCha
     );
   }
 
-  // Time frame options
-  const timeFrames = [
-    { id: "5m", label: "5m" },
-    { id: "15m", label: "15m" },
-    { id: "1h", label: "1h" },
-    { id: "4h", label: "4h" },
-    { id: "1d", label: "1d" },
-  ];
-
-  // Extract pair tokens
-  const baseToken = pair.pair.find((t) => t.pairTokenType === "token0");
-  const quoteToken = pair.pair.find((t) => t.pairTokenType === "token1");
 
   return (
     <div className="h-full flex flex-col">
@@ -166,19 +153,19 @@ const TokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame, onTimeFrameCha
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center">
           <div className="flex items-center mr-4">
-            <img
-              src={
-                pair.exchangeLogo || "/images/exchanges/default-exchange.svg"
-              }
-              alt={pair.exchangeName}
-              className="w-6 h-6 mr-2 rounded-full"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.onerror = null;
-                target.src =
-                  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzM0Mzk0NyIvPjwvc3ZnPg==";
-              }}
-            />
+          <Image
+          src={pair.exchangeLogo || "/images/exchanges/default-exchange.svg"}
+          alt={pair.exchangeName}
+          width={24}
+          height={24}
+          className="mr-2 rounded-full"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.onerror = null;
+            target.src =
+              "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzM0Mzk0NyIvPjwvc3ZnPg==";
+          }}
+        />
             <span className="font-medium text-dex-text-primary">
               {pair.pairLabel}
             </span>

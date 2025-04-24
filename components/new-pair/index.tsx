@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react"
 import UtilityBar from "./utilityBar"
-import Feed from "../reusable/feed"
+// import Feed from "../reusable/feed"
 import Footer from "../common/footer"
 import Table from "./table/table1";
 import { useSearchParams } from "next/navigation";
@@ -36,7 +36,7 @@ export default function Meme() {
             {
                 switchTabs == '1' ?
                     <Table /> :
-                    <Feed />
+                   <p></p>
             }
             <Footer />
         </div>

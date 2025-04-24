@@ -1,5 +1,6 @@
 import React from "react";
 import { useRouter } from "next/navigation"; 
+import Image from "next/image";
 
 type Token = {
   tokenAddress: string;
@@ -16,11 +17,11 @@ type Token = {
 type SearchResultsProps = {
   results: Token[];
   onClose: () => void;
-  navigate?: (path: string) => void;
+
 };
 
-const SearchResults: React.FC<SearchResultsProps> = ({ results, onClose, navigate }) => {
-  // const handleNavigate = navigate || (() => {});
+const SearchResults: React.FC<SearchResultsProps> = ({ results, onClose }) => {
+
   const router = useRouter();
 
   const handleNavigate = (path: string) => {
@@ -114,27 +115,33 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, onClose, navigat
         >
           <div className="flex items-center flex-1">
             <div className="flex-shrink-0 relative mr-3">
-              <img
-                src={token.logo || "/images/default-token.png"}
-                alt={token.symbol}
-                className="w-10 h-10 rounded-full bg-gray-700"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.onerror = null;
-                  target.src =
-                    "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iIzU0NTQ1NCIvPjwvc3ZnPg==";
-                }}
-              />
-              <img
-                src={getChainIcon(token.chainId)}
-                alt="Chain"
-                className="absolute -right-1 -bottom-1 w-5 h-5 rounded-full border border-gray-700 bg-gray-800"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.onerror = null;
-                  target.src = "/images/chains/generic.svg";
-                }}
-              />
+            <Image
+            src={token.logo || "/images/default-token.png"}
+            alt={token.symbol}
+            width={40}
+            height={40}
+            className="rounded-full bg-gray-700"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.onerror = null;
+              target.src =
+                "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iIzU0NTQ1NCIvPjwvc3ZnPg==";
+            }}
+          />
+
+<Image
+  src={getChainIcon(token.chainId)}
+  alt="Chain"
+  width={20}
+  height={20}
+  className="absolute -right-1 -bottom-1 rounded-full border border-gray-700 bg-gray-800"
+  onError={(e) => {
+    const target = e.target as HTMLImageElement;
+    target.onerror = null;
+    target.src = "/images/chains/generic.svg";
+  }}
+/>
+
             </div>
             <div>
               <div className="font-medium flex items-center">

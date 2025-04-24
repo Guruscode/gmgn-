@@ -1,29 +1,30 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 import WalletManager from "./portfolio/WalletManager";
 import NetWorthCard from "./portfolio/NetWorthCard";
 import ChainSelector from "./portfolio/ChainSelector";
 import TokenHoldings from "./portfolio/TokenHoldings";
+import { Wallet, Token } from '@/lib/wallet';
 
 const API_KEY = process.env.NEXT_PUBLIC_MORALIS_API_KEY;
-// const API_KEY = process.env.REACT_APP_MORALIS_API_KEY as string;
 
-type Wallet = {
-  address: string;
-  [key: string]: any;
-};
+
+
 
 type ChainInfo = {
   chain: string;
   networth_usd: string;
 };
 
-type Token = {
-  token_address: string;
-  usd_value?: string;
-  [key: string]: any;
-};
+// type Token = {
+//   token_address: string;
+//   usd_value?: string;
+//   symbol?: string;
+//   name?: string;
+//   logo?: string;
+//   chain: string;
+// } & Record<string, unknown>;
 
 type NetWorthData = {
   total_networth_usd: string;
@@ -45,7 +46,6 @@ const SUPPORTED_CHAINS: { id: string; name: string; icon: string; color: string 
 ];
 
 const PortfolioPage: React.FC = () => {
- 
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(null);
   const [netWorth, setNetWorth] = useState<NetWorthData | null>(null);
@@ -67,19 +67,56 @@ const PortfolioPage: React.FC = () => {
     } catch (err) {
       console.error("Error parsing saved wallets:", err);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
   useEffect(() => {
     if (wallets.length > 0) {
       localStorage.setItem("portfolioWallets", JSON.stringify(wallets));
     }
   }, [wallets]);
 
-  useEffect(() => {
-    if (selectedWallet) {
-      fetchNetWorth(selectedWallet.address);
+  const fetchNetWorth = useCallback(async () => {
+    if (!selectedWallet) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const chainParams = SUPPORTED_CHAINS.map(
+        (chain, index) => `chains[${index}]=${chain.id}`
+      ).join("&");
+
+      const url = `https://deep-index.moralis.io/api/v2.2/wallets/${selectedWallet.address}/net-worth?${chainParams}&exclude_spam=true&exclude_unverified_contracts=true`;
+
+      const response = await fetch(url, {
+        headers: {
+          accept: "application/json",
+          "X-API-Key": API_KEY!,
+        },
+      });
+
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
+
+      const data: NetWorthData = await response.json();
+      setNetWorth(data);
+
+      if (selectedChain === "all" && data.chains?.length) {
+        const sortedChains = [...data.chains].sort(
+          (a, b) => parseFloat(b.networth_usd) - parseFloat(a.networth_usd)
+        );
+        fetchTokens(selectedWallet.address, sortedChains[0].chain);
+      }
+    } catch (err) {
+      console.error("Error fetching wallet net worth:", err);
+      setError("Failed to load wallet data");
+    } finally {
+      setLoading(false);
     }
-  }, [selectedWallet]);
+  }, [selectedWallet, selectedChain]);
+
+  useEffect(() => {
+    fetchNetWorth();
+  }, [selectedWallet, selectedChain, fetchNetWorth]);
 
   useEffect(() => {
     if (selectedWallet) {
@@ -96,43 +133,6 @@ const PortfolioPage: React.FC = () => {
     }
   }, [selectedWallet, selectedChain, netWorth]);
 
-  const fetchNetWorth = async (address: string) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const chainParams = SUPPORTED_CHAINS.map(
-        (chain, index) => `chains[${index}]=${chain.id}`
-      ).join("&");
-
-      const url = `https://deep-index.moralis.io/api/v2.2/wallets/${address}/net-worth?${chainParams}&exclude_spam=true&exclude_unverified_contracts=true`;
-
-      const response = await fetch(url, {
-        headers: {
-          accept: "application/json",
-          "X-API-Key": API_KEY,
-        },
-      });
-
-      if (!response.ok) throw new Error(`API error: ${response.status}`);
-
-      const data: NetWorthData = await response.json();
-      setNetWorth(data);
-
-      if (selectedChain === "all" && data.chains?.length) {
-        const sortedChains = [...data.chains].sort(
-          (a, b) => parseFloat(b.networth_usd) - parseFloat(a.networth_usd)
-        );
-        fetchTokens(address, sortedChains[0].chain);
-      }
-    } catch (err) {
-      console.error("Error fetching wallet net worth:", err);
-      setError("Failed to load wallet data");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const fetchTokens = async (address: string, chain: string) => {
     setLoading(true);
     try {
@@ -140,7 +140,7 @@ const PortfolioPage: React.FC = () => {
       const response = await fetch(url, {
         headers: {
           accept: "application/json",
-          "X-API-Key": API_KEY,
+          "X-API-Key": API_KEY!,
         },
       });
 
@@ -165,17 +165,17 @@ const PortfolioPage: React.FC = () => {
     }
   };
 
-  const addWallet = (newWallet: Wallet): boolean => {
+  const addWallet = (wallet: Wallet): boolean => {
     if (
       wallets.some(
-        (wallet) => wallet.address.toLowerCase() === newWallet.address.toLowerCase()
+        (w) => w.address.toLowerCase() === wallet.address.toLowerCase()
       )
     ) {
       return false;
     }
-    const updatedWallets = [...wallets, newWallet];
+    const updatedWallets = [...wallets, wallet];
     setWallets(updatedWallets);
-    setSelectedWallet(newWallet);
+    setSelectedWallet(wallet);
     return true;
   };
 
@@ -216,18 +216,7 @@ const PortfolioPage: React.FC = () => {
     };
 
     const path = getTokenPath(chain, token.token_address);
-    // navigate(path); // Uncomment if using useNavigate
-  };
-
-  const getCurrentChainData = () => {
-    if (!netWorth?.chains) return null;
-    if (selectedChain === "all") {
-      return {
-        networth_usd: netWorth.total_networth_usd,
-        chain: "all",
-      };
-    }
-    return netWorth.chains.find((chain) => chain.chain === selectedChain) || null;
+    window.location.href = path; // Replace with router push if needed
   };
 
   return (
@@ -235,13 +224,24 @@ const PortfolioPage: React.FC = () => {
       <h1 className="text-2xl font-bold mb-6">Portfolio</h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
-          <WalletManager
-            wallets={wallets}
-            selectedWallet={selectedWallet}
-            onAddWallet={addWallet}
-            onRemoveWallet={removeWallet}
-            onSelectWallet={handleWalletSelect}
-          />
+          
+        <WalletManager
+      wallets={wallets.map(wallet => ({
+        address: wallet.address,
+        name: wallet.name || "Default Name",
+        addedAt: wallet.addedAt || new Date().toISOString(),
+      }))}
+      selectedWallet={selectedWallet ? {
+        address: selectedWallet.address,
+        name: selectedWallet.name || "Default Name",
+        addedAt: selectedWallet.addedAt || new Date().toISOString(),
+      } : null}
+      onAddWallet={addWallet}
+      onRemoveWallet={removeWallet}
+      onSelectWallet={handleWalletSelect}
+    />
+
+
         </div>
         <div className="lg:col-span-2">
           {selectedWallet ? (

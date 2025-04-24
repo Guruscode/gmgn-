@@ -1,14 +1,26 @@
-// components/portfolio/ChainSelector.js
+// components/portfolio/ChainSelector.tsx
 import React, { useRef, useState, useEffect } from "react";
+import Image from 'next/image';
 
-const ChainSelector = ({ chains, selectedChain, onChainSelect }) => {
+interface Chain {
+  chain: string;
+  networth_usd: string;
+}
+
+interface ChainSelectorProps {
+  chains: Chain[];
+  selectedChain: string;
+  onChainSelect: (chain: string) => void;
+}
+
+const ChainSelector: React.FC<ChainSelectorProps> = ({ chains, selectedChain, onChainSelect }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
@@ -19,8 +31,8 @@ const ChainSelector = ({ chains, selectedChain, onChainSelect }) => {
     };
   }, []);
 
-  const getChainIcon = (chainId) => {
-    const chainMap = {
+  const getChainIcon = (chainId: string): string => {
+    const chainMap: Record<string, string> = {
       eth: "ethereum",
       "0x1": "ethereum",
       solana: "solana",
@@ -51,12 +63,12 @@ const ChainSelector = ({ chains, selectedChain, onChainSelect }) => {
   };
 
   // Get current chain display name
-  const getCurrentChainDisplay = () => {
+  const getCurrentChainDisplay = (): string => {
     if (selectedChain === "all") {
       return "All Chains";
     }
 
-    const chainMap = {
+    const chainMap: Record<string, string> = {
       eth: "Ethereum",
       bsc: "BSC",
       polygon: "Polygon",
@@ -71,7 +83,7 @@ const ChainSelector = ({ chains, selectedChain, onChainSelect }) => {
   };
 
   // Format currency for display
-  const formatCurrency = (value) => {
+  const formatCurrency = (value: string): string => {
     if (!value) return "$0.00";
 
     const numValue = parseFloat(value);
@@ -149,11 +161,13 @@ const ChainSelector = ({ chains, selectedChain, onChainSelect }) => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <div className="w-6 h-6 rounded-full flex items-center justify-center mr-2">
-                    <img
-                      src={getChainIcon(chain.chain)}
-                      alt={chain.chain}
-                      className="w-full h-full object-contain"
-                    />
+                  <Image
+                  src={getChainIcon(chain.chain)}
+                  alt={chain.chain}
+                  width={24}
+                  height={24}
+                  className="w-full h-full object-contain"
+                />
                   </div>
                   <div className="font-medium">
                     {chain.chain === "eth"

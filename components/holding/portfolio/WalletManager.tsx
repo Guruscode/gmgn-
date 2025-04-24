@@ -1,16 +1,30 @@
-// components/portfolio/WalletManager.js
 import React, { useState } from "react";
+import { Wallet } from '@/lib/wallet';
 
-const WalletManager = ({
+// interface Wallet {
+//   name: string;
+//   address: string;
+//   addedAt: string;
+// }
+
+
+interface WalletManagerProps {
+  wallets: Wallet[];
+  selectedWallet: Wallet | null;
+  onAddWallet: (wallet: Wallet) => boolean;
+  onRemoveWallet: (address: string) => void;
+  onSelectWallet: (wallet: Wallet) => void;
+}
+const WalletManager: React.FC<WalletManagerProps> = ({
   wallets,
   selectedWallet,
   onAddWallet,
   onRemoveWallet,
   onSelectWallet,
 }) => {
-  const [newWalletName, setNewWalletName] = useState("");
-  const [newWalletAddress, setNewWalletAddress] = useState("");
-  const [error, setError] = useState("");
+  const [newWalletName, setNewWalletName] = useState<string>("");
+  const [newWalletAddress, setNewWalletAddress] = useState<string>("");
+  const [error, setError] = useState<string>("");
 
   const handleAddWallet = () => {
     setError("");
@@ -32,7 +46,7 @@ const WalletManager = ({
       return;
     }
 
-    const newWallet = {
+    const newWallet: Wallet = {
       name: newWalletName.trim(),
       address: newWalletAddress.trim(),
       addedAt: new Date().toISOString(),
@@ -110,9 +124,7 @@ const WalletManager = ({
         {error && <div className="text-red-700 text-sm mb-2">{error}</div>}
 
         <div className="mb-3">
-          <label className="block text-xs text-white mb-1">
-            Wallet Name
-          </label>
+          <label className="block text-xs text-white mb-1">Wallet Name</label>
           <input
             type="text"
             value={newWalletName}
@@ -123,9 +135,7 @@ const WalletManager = ({
         </div>
 
         <div className="mb-3">
-          <label className="block text-xs text-white mb-1">
-            Wallet Address
-          </label>
+          <label className="block text-xs text-white mb-1">Wallet Address</label>
           <input
             type="text"
             value={newWalletAddress}

@@ -1,30 +1,32 @@
 import React from "react";
-
-interface Token {
-  tokenAddress: string;
-  symbol?: string;
-  name?: string;
-  logo?: string;
-  priceUsd?: string;
-  liquidity?: string;
-  fullyDilutedValuation?: string;
-  graduatedAt?: string;
-  [key: string]: any;
-}
+import Image from "next/image";
+import { Token } from '@/lib/utils';
+// interface Token {
+//   tokenAddress: string;
+//   symbol?: string;
+//   name?: string;
+//   logo?: string;
+//   priceUsd?: string;
+//   liquidity?: string;
+//   fullyDilutedValuation?: string;
+//   graduatedAt?: string;
+//   [key: string]: string | number | undefined;
+// }
 
 interface GraduatedTokenCardProps {
   token: Token;
-  formatPrice: (price?: string) => string;
+  
+  // formatPrice: (price?: string) => string;
   formatNumber: (num?: string) => string;
-  formatTimeAgo: (dateString?: string) => string;
+  // formatTimeAgo: (dateString?: string) => string;
   onClick: () => void;
 }
 
 const GraduatedTokenCard: React.FC<GraduatedTokenCardProps> = ({
   token,
-  formatPrice,
+  // formatPrice,
   formatNumber,
-  formatTimeAgo,
+  // formatTimeAgo,
   onClick,
 }) => {
   // Display percentage for graduated tokens (2%)
@@ -38,16 +40,19 @@ const GraduatedTokenCard: React.FC<GraduatedTokenCardProps> = ({
       {/* Token icon/avatar */}
       <div className="mr-2 w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center overflow-hidden">
         {token.logo ? (
-          <img 
-            src={token.logo} 
-            alt={token.symbol || "token"} 
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.onerror = null;
-              target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iIzQzMmE3NCIvPjwvc3ZnPg==";
-            }}
-          />
+         <Image
+         src={token.logo}
+         alt={token.symbol || "token"}
+         width={32}
+         height={32}
+         className="w-full h-full object-cover"
+         onError={(e) => {
+           const target = e.target as HTMLImageElement;
+           target.onerror = null;
+           target.src = "data:image/svg+xml;base64,..."; // fallback logic may need adjustment
+         }}
+       />
+       
         ) : (
           <span className="text-white text-xs">
             {token.symbol ? token.symbol.charAt(0) : "?"}

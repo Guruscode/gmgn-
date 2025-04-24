@@ -1,28 +1,25 @@
 // components/token/TokenInfo.tsx
 import React, { useState, useEffect, useRef } from "react";
+import { Pair } from "@/lib/tokenTypes";
+import Image from 'next/image';
 
-interface Token {
-  address: string;
-  symbol: string;
-  name: string;
-  logo?: string;
-  holders?: number;
+
+interface PairToken {
+  tokenSymbol: string;
+  amount?: number;
+  totalSupply?: number;
 }
-
-interface Pair {
-  pairAddress: string;
-  pairLabel: string;
-  exchangeName: string;
-  usdPrice?: number;
-  nativePrice?: number;
-  liquidityUsd?: number;
-  pair?: {
-    tokenSymbol: string;
-    amount: number;
-    totalSupply: number;
-  }[];
+interface TokenSnipersProps {
+  pair: Pair | null;
+  chainId: string;
+  timeFrame?: string;
+  token: { // You might need to adjust this based on what TokenInfo passes
+    symbol: string;
+    address: string;
+    holders?: number;
+    logo?: string;
+  } | null;
 }
-
 interface TokenMetadata {
   name?: string;
   symbol?: string;
@@ -74,44 +71,20 @@ interface PairStats {
   pairCreated?: string;
 }
 
-interface TokenInfoProps {
-  token: Token;
-  pair: Pair;
-  timeFrame?: string;
-  chainId: string;
-}
 
 const API_KEY = process.env.NEXT_PUBLIC_MORALIS_API_KEY;
 
-const TokenInfo: React.FC<TokenInfoProps> = ({ token, pair, timeFrame, chainId }) => {
+const TokenInfo: React.FC<TokenSnipersProps> = ({ token, pair, chainId }) => {
   const [pairStats, setPairStats] = useState<PairStats | null>(null);
   const [tokenMetadata, setTokenMetadata] = useState<TokenMetadata | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedTimeFrame, setSelectedTimeFrame] = useState("24h");
+  const [selectedTimeFrame] = useState("24h");
   const containerRef = useRef<HTMLDivElement>(null);
-  const [scrollPosition, setScrollPosition] = useState(0);
   const [isSolana, setIsSolana] = useState(false);
   const [activeTab, setActiveTab] = useState<'buy' | 'sell' | 'auto'>('buy');
   const [amount, setAmount] = useState(0);
   const [amountPercentage, setAmountPercentage] = useState(0);
   const [isAutoEnabled, setIsAutoEnabled] = useState(false);
 
-  // Block explorer URLs by chain
-  const blockExplorers: Record<string, string> = {
-    "0x1": "https://etherscan.io",
-    "0x38": "https://bscscan.com",
-    "0x89": "https://polygonscan.com",
-    "0xa4b1": "https://arbiscan.io",
-    "0xa": "https://optimistic.etherscan.io",
-    "0x2105": "https://basescan.org",
-    "0xa86a": "https://snowtrace.io",
-    "0xe708": "https://lineascan.build",
-    "0xfa": "https://ftmscan.com",
-    "0x171": "https://scan.pulsechain.com",
-    "0x7e4": "https://app.roninchain.com",
-    solana: "https://solscan.io",
-  };
 
   // Map UI timeframes to API timeframes
   const timeFrameMap: Record<string, string> = {
@@ -121,11 +94,10 @@ const TokenInfo: React.FC<TokenInfoProps> = ({ token, pair, timeFrame, chainId }
     "24h": "24h",
   };
 
-  // Track scroll position
   useEffect(() => {
     const handleScroll = () => {
       if (containerRef.current) {
-        setScrollPosition(containerRef.current.scrollTop);
+        // setScrollPosition(containerRef.current.scrollTop); // Unused
       }
     };
 
@@ -135,6 +107,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({ token, pair, timeFrame, chainId }
       return () => container.removeEventListener("scroll", handleScroll);
     }
   }, []);
+
+
 
   // Fetch token metadata
   useEffect(() => {
@@ -158,7 +132,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({ token, pair, timeFrame, chainId }
           headers: {
             accept: "application/json",
             "X-API-Key": API_KEY,
-          },
+          } as HeadersInit,
         });
 
         if (!response.ok) {
@@ -190,7 +164,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({ token, pair, timeFrame, chainId }
     const fetchPairStats = async () => {
       if (!pair || !pair.pairAddress) return;
 
-      setLoading(true);
+      // setLoading(true);
       try {
         let url;
         const isSolana = chainId === "solana";
@@ -207,7 +181,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({ token, pair, timeFrame, chainId }
           headers: {
             accept: "application/json",
             "X-API-Key": API_KEY,
-          },
+          } as HeadersInit,
         });
 
         if (!response.ok) {
@@ -219,61 +193,16 @@ const TokenInfo: React.FC<TokenInfoProps> = ({ token, pair, timeFrame, chainId }
         setPairStats(data);
       } catch (err) {
         console.error("Error fetching pair stats:", err);
-        setError("Failed to load pair statistics");
+        // setError("Failed to load pair statistics");
       } finally {
-        setLoading(false);
+        // setLoading(false);
       }
     };
 
     fetchPairStats();
   }, [pair, chainId]);
 
-  // Handle time frame selection
-  const handleTimeFrameChange = (timeFrame: string) => {
-    setSelectedTimeFrame(timeFrame);
-  };
-
-  // Format price with appropriate decimal places
-  const formatPrice = (price: number | string | undefined) => {
-    if (!price) return "$0";
-
-    // Convert to number if it's a string
-    const numPrice = typeof price === "string" ? parseFloat(price) : price;
-
-    if (numPrice < 0.00001) {
-      return "$" + numPrice.toFixed(10).replace(/\.?0+$/, "");
-    } else if (numPrice < 0.01) {
-      return "$" + numPrice.toFixed(6);
-    } else if (numPrice < 1000) {
-      return "$" + numPrice.toFixed(4);
-    } else {
-      return (
-        "$" +
-        numPrice.toLocaleString(undefined, {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })
-      );
-    }
-  };
-
-  // Format token price in terms of the quote token
-  const formatTokenPrice = (price: number | string | undefined, symbol: string) => {
-    if (!price) return "0";
-
-    const numPrice = typeof price === "string" ? parseFloat(price) : price;
-
-    if (numPrice < 0.00001) {
-      return `${numPrice.toFixed(10).replace(/\.?0+$/, "")} ${symbol}`;
-    } else {
-      const parts = numPrice.toString().split(".");
-      if (parts.length > 1) {
-        // Take 6 significant digits after the decimal
-        return `${parts[0]}.${parts[1].substring(0, 6)} ${symbol}`;
-      }
-      return `${numPrice} ${symbol}`;
-    }
-  };
+ 
 
   // Format large numbers with K, M, B suffixes
   const formatNumber = (num: number | string | undefined) => {
@@ -292,38 +221,9 @@ const TokenInfo: React.FC<TokenInfoProps> = ({ token, pair, timeFrame, chainId }
     }
   };
 
-  // Format time ago
-  const formatTimeAgo = (dateString: string | undefined) => {
-    if (!dateString) return "";
 
-    const date = new Date(dateString);
-    const now = new Date();
 
-    const diffMs = now.getTime() - date.getTime();
-    const diffSec = Math.floor(diffMs / 1000);
-    const diffMin = Math.floor(diffSec / 60);
-    const diffHours = Math.floor(diffMin / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffDays > 0) {
-      return `${diffDays}d ${diffHours % 24}h ago`;
-    } else {
-      return `${diffHours}h ${diffMin % 60}m ago`;
-    }
-  };
-
-  // Format percentage changes
-  const formatPercentChange = (value: number | undefined) => {
-    if (value === undefined || value === null) return "-";
-    return (value >= 0 ? "+" : "") + value.toFixed(2) + "%";
-  };
-
-  // Calculate ratio for progress bars
-  const calculateRatio = (a: number | undefined, b: number | undefined) => {
-    if (!a || !b || a + b === 0) return 0.5; // Default to 50% if no data
-    return a / (a + b);
-  };
-
+ 
   // Get time period data
   const getTimePeriodData = (period: string) => {
     const apiPeriod = timeFrameMap[period] || "24h";
@@ -352,14 +252,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({ token, pair, timeFrame, chainId }
     };
   };
 
-  // Get token social links
-  const getTokenLinks = () => {
-    if (!tokenMetadata) return {};
+ 
 
-    return tokenMetadata.links || {};
-  };
-
-  // Get market cap or FDV
   const getMarketCapOrFDV = (type: "fdv" | "market_cap" = "fdv") => {
     if (isSolana) {
       // For Solana, we only have fullyDilutedValue
@@ -381,17 +275,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({ token, pair, timeFrame, chainId }
   // Get current time period data
   const currentPeriodData = getTimePeriodData(selectedTimeFrame);
 
-  // New helper function to shorten address
-  const shortenAddress = (address: string | undefined) => {
-    if (!address) return "";
-    return `${address.slice(0, 4)}...${address.slice(-4)}`;
-  };
 
-  // New helper function to handle copy
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    // Could add toast notification here
-  };
+
 
   if (!token || !pair) {
     return (
@@ -419,46 +304,14 @@ const TokenInfo: React.FC<TokenInfoProps> = ({ token, pair, timeFrame, chainId }
     return defaultQuoteTokens[chainId] || "ETH";
   })();
 
-  // Get token price and market info
-  const usdPrice = pairStats?.currentUsdPrice || pair.usdPrice || 0;
-  const nativePrice = pairStats?.currentNativePrice || pair.nativePrice || 0;
+  const nativePrice = pairStats?.currentNativePrice  || 0;
   const totalLiquidity = pairStats?.totalLiquidityUsd || pair.liquidityUsd || 0;
   
   // Get market cap from metadata or estimate
   const marketCap = getMarketCapOrFDV();
 
-  // Get token links
-  const tokenLinks = getTokenLinks();
 
-  // Get token categories (EVM only)
-  const tokenCategories =
-    !isSolana && tokenMetadata?.categories ? tokenMetadata.categories : [];
 
-  // Get creation time
-  const creationTime =
-    pairStats?.pairCreated || tokenMetadata?.created_at || null;
-
-  // Get the block explorer URL
-  const getExplorerUrl = (address: string, type: "address" | "token" = "address") => {
-    const explorer = blockExplorers[chainId] || "";
-
-    if (!explorer) return "#";
-
-    if (isSolana) {
-      return `${explorer}/${type === "token" ? "token" : "account"}/${address}`;
-    } else {
-      return `${explorer}/${type === "token" ? "token" : "address"}/${address}`;
-    }
-  };
-
-  // Get total supply and tokens in pair
-  const getTokenSupply = () => {
-    if (isSolana) {
-      return tokenMetadata?.totalSupplyFormatted || "0";
-    } else {
-      return tokenMetadata?.total_supply_formatted || "0";
-    }
-  };
 
   return (
     <div 
@@ -468,25 +321,27 @@ const TokenInfo: React.FC<TokenInfoProps> = ({ token, pair, timeFrame, chainId }
       {/* Token Header */}
       <div className="p-4 border-b border-[#1e1e24]">
         <div className="flex items-center mb-3">
-          <img
-            src={
-              token.logo ||
-              tokenMetadata?.logo ||
-              "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iIzM0Mzk0NyIvPjwvc3ZnPg=="
-            }
-            alt={token.symbol}
-            className="w-10 h-10 mr-3 rounded-full bg-[#1e1e24]"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.onerror = null;
-              target.src =
-                "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iIzM0Mzk0NyIvPjwvc3ZnPg==";
-            }}
-          />
+        <Image
+  src={
+    token.logo ||
+    tokenMetadata?.logo ||
+    "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iIzM0Mzk0NyIvPjwvc3ZnPg=="
+  }
+  alt={token.symbol}
+  width={40}
+  height={40}
+  className="w-10 h-10 mr-3 rounded-full bg-[#1e1e24]"
+  onError={(e) => {
+    const target = e.target as HTMLImageElement;
+    target.onerror = null;
+    target.src =
+      "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iIzM0Mzk0NyIvPjwvc3ZnPg==";
+  }}
+/>
           <div>
             <div className="flex items-center">
               <h1 className="text-xl font-bold">
-                {tokenMetadata?.name || token.name}
+                {tokenMetadata?.name }
               </h1>
               <span className="ml-2 text-sm bg-[#f8d521] text-black px-2 py-0.5 rounded">
                 {tokenMetadata?.symbol || token.symbol}
@@ -520,22 +375,30 @@ const TokenInfo: React.FC<TokenInfoProps> = ({ token, pair, timeFrame, chainId }
 
         {/* Pair Liquidity */}
         <div className="grid grid-cols-2 gap-4 mt-4 text-xs">
-          {pair.pair && pair.pair.map((pairToken, index) => (
-            <div key={index}>
+        {pair?.pair?.map((pairToken: PairToken, index) => {
+          const amount = pairToken.amount || 0;
+          const totalSupply = pairToken.totalSupply || 0;
+          const percentage = totalSupply > 0 
+            ? (amount / totalSupply * 100).toFixed(1)
+            : '0.0';
+
+          return (
+            <div key={`${pairToken.tokenSymbol}-${index}`}>
               <div className="text-[#8f8f92]">
                 {pairToken.tokenSymbol}
               </div>
               <div className="flex justify-between">
                 <span>
-                  {formatNumber(pairToken.amount)} / {formatNumber(pairToken.totalSupply)}
+                  {formatNumber(amount)} / {formatNumber(totalSupply)}
                 </span>
                 <span>
-                  ({(pairToken.amount / pairToken.totalSupply * 100).toFixed(1)}%)
+                  ({percentage}%)
                 </span>
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
+      </div>
 
         {/* Status Indicators */}
         <div className="grid grid-cols-4 gap-2 mt-4 text-xs">

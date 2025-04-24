@@ -1,4 +1,6 @@
 import React from "react";
+import Image from "next/image";
+
 
 interface Token {
   tokenAddress: string;
@@ -9,7 +11,7 @@ interface Token {
   liquidity?: string;
   fullyDilutedValuation?: string;
   bondingCurveProgress?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface BondingTokenCardProps {
@@ -36,16 +38,16 @@ const BondingTokenCard: React.FC<BondingTokenCardProps> = ({
       {/* Token icon/avatar */}
       <div className="mr-2 w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center overflow-hidden">
         {token.logo ? (
-          <img 
-            src={token.logo} 
-            alt={token.symbol || "token"} 
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.onerror = null;
-              target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iIzFjMzU2NCIvPjwvc3ZnPg==";
-            }}
-          />
+         <Image
+         src={token.logo}
+         alt={token.symbol || "token"}
+         width={32}
+         height={32}
+         className="w-full h-full object-cover"
+         unoptimized // add this if the logos are from external sources
+         onError={() => {}}
+       />
+       
         ) : (
           <span className="text-white text-xs">
             {token.symbol ? token.symbol.charAt(0) : "?"}
@@ -87,7 +89,7 @@ const BondingTokenCard: React.FC<BondingTokenCardProps> = ({
             <div className="flex items-center text-xs text-gray-400 justify-end">
               <span>Liq: {formatNumber(token.liquidity)} •</span>
               <span className="mx-1">178 •</span>
-              <span>${(token.priceUsd ? parseFloat(token.priceUsd).toFixed(1) : "0")}k MC: ${(token.fullyDilutedValuation ? parseFloat(token.fullyDilutedValuation).toFixed(1) : "0")}k</span>
+              <span>{formatPrice(token.priceUsd)}k MC: ${(token.fullyDilutedValuation ? parseFloat(token.fullyDilutedValuation).toFixed(1) : "0")}k</span>
             </div>
           </div>
         </div>

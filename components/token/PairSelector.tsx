@@ -1,26 +1,26 @@
 import React, { useState } from "react";
+import Image from "next/image";
 
-interface Token {
-  symbol: string;
-  address: string;
-  pairTokenType?: string;
-  logo?: string;
-}
+import { Pair } from "@/lib/tokenTypes"; 
 
-interface Pair {
-  pairAddress: string;
-  pairLabel: string;
-  exchangeName: string;
-  exchangeLogo?: string;
-  liquidityUsd?: number;
-  pair: Token[];
-}
+
+// interface Pair {
+//   pairAddress: string;
+//   pairLabel: string;
+//   exchangeName: string;
+//   exchangeLogo?: string;
+//   liquidityUsd?: number;
+//   pair: Token[];
+// }
+
+
 
 interface PairSelectorProps {
-  pairs: Pair[];
+  pairs: Pair[] | null; // Change this line to expect an array of Pair objects
   selectedPair: Pair | null;
   onSelect: (pairAddress: string) => void;
 }
+
 
 const PairSelector: React.FC<PairSelectorProps> = ({ pairs, selectedPair, onSelect }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -56,20 +56,17 @@ const PairSelector: React.FC<PairSelectorProps> = ({ pairs, selectedPair, onSele
       >
         <div className="flex flex-col">
           <div className="flex items-center">
-            <img
-              src={
-                selectedPair?.exchangeLogo ||
-                "/images/exchanges/default-exchange.svg"
-              }
-              alt={selectedPair?.exchangeName}
-              className="w-5 h-5 mr-2 rounded-full"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.onerror = null;
-                target.src =
-                  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzM0Mzk0NyIvPjwvc3ZnPg==";
-              }}
-            />
+          <Image
+          src={
+            selectedPair?.exchangeLogo ||
+            "/images/exchanges/default-exchange.svg"
+          }
+          alt={selectedPair?.exchangeName || "Exchange"}
+          width={20}
+          height={20}
+          className="w-5 h-5 mr-2 rounded-full object-cover"
+        />
+
             <span className="font-medium">{selectedPair?.pairLabel}</span>
           </div>
           <span className="text-dex-text-secondary text-xs ml-7">
@@ -96,7 +93,7 @@ const PairSelector: React.FC<PairSelectorProps> = ({ pairs, selectedPair, onSele
 
       {isOpen && (
         <div className="absolute z-10 w-full mt-1 bg-dex-bg-tertiary rounded-md shadow-lg max-h-60 overflow-auto">
-          {pairs.map((pair) => (
+          {pairs?.map((pair) => (
             <button
               key={pair.pairAddress}
               className={`flex items-center justify-between w-full p-3 text-left hover:bg-dex-bg-highlight ${
@@ -108,20 +105,17 @@ const PairSelector: React.FC<PairSelectorProps> = ({ pairs, selectedPair, onSele
             >
               <div className="flex flex-col">
                 <div className="flex items-center">
-                  <img
-                    src={
-                      pair.exchangeLogo ||
-                      "/images/exchanges/default-exchange.svg"
-                    }
-                    alt={pair.exchangeName}
-                    className="w-5 h-5 mr-2 rounded-full"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.onerror = null;
-                      target.src =
-                        "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzM0Mzk0NyIvPjwvc3ZnPg==";
-                    }}
-                  />
+                <Image
+              src={
+                pair.exchangeLogo ||
+                "/images/exchanges/default-exchange.svg"
+              }
+              alt={pair.exchangeName || "Exchange"}
+              width={20}
+              height={20}
+              className="w-5 h-5 mr-2 rounded-full object-cover"
+            />
+
                   <span className="font-medium">{pair.pairLabel}</span>
                 </div>
                 <span className="text-dex-text-secondary text-xs ml-7">

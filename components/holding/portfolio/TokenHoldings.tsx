@@ -1,7 +1,33 @@
 import React from "react";
+import Image from "next/image";
+
+import { Token } from '@/lib/wallet';
 
 
-const TokenHoldings = ({
+// interface Token {
+//   token_address: string;
+//   logo: string;
+//   symbol: string;
+//   name: string;
+//   usd_price: string;
+//   usd_price_24hr_percent_change: number;
+//   balance: string;
+//   decimals: number;
+//   usd_value: string;
+//   portfolio_percentage?: number;
+//   chain?: string;
+// }
+
+
+interface TokenHoldingsProps {
+  tokens: Token[];
+  loading: boolean;
+  error: string | null;
+  onTokenClick: (token: Token, chain: string) => void;
+  selectedChain: string;
+}
+
+const TokenHoldings: React.FC<TokenHoldingsProps> = ({
   tokens,
   loading,
   error,
@@ -9,8 +35,8 @@ const TokenHoldings = ({
   selectedChain,
 }) => {
   // Format currency for display
-  const formatCurrency = (value) => {
-    if (!value && value !== 0) return "$0.00";
+  const formatCurrency = (value?: string): string => {
+    if (!value || value === "0") return "$0.00";
 
     const numValue = parseFloat(value);
 
@@ -24,7 +50,7 @@ const TokenHoldings = ({
   };
 
   // Format token amount
-  const formatTokenAmount = (amount, decimals = 18) => {
+  const formatTokenAmount = (amount?: string, decimals = 18): string => {
     if (!amount) return "0";
 
     const formattedAmount = parseFloat(amount) / Math.pow(10, decimals);
@@ -43,8 +69,8 @@ const TokenHoldings = ({
   };
 
   // Format percentage change
-  const formatPercentChange = (value) => {
-    if (!value && value !== 0) return "-";
+  const formatPercentChange = (value?: number): string => {
+    if (value === null || value === undefined) return "-";
     return (value >= 0 ? "+" : "") + value.toFixed(2) + "%";
   };
 
@@ -118,18 +144,16 @@ const TokenHoldings = ({
               >
                 <td className="p-3">
                   <div className="flex items-center">
-                    <img
+                    <Image
                       src={
                         token.logo ||
                         "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iIzM0Mzk0NyIvPjwvc3ZnPg=="
                       }
-                      alt={token.symbol}
+                      alt={token.symbol || "Token"}
                       className="w-8 h-8 rounded-full mr-3"
-                      onError={(e) => {
-                        e.target.onError = null;
-                        e.target.src =
-                          "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iIzM0Mzk0NyIvPjwvc3ZnPg==";
-                      }}
+                      width={32} // You can adjust the width and height
+                      height={32} // You can adjust the width and height
+                      unoptimized
                     />
                     <div>
                       <div className="font-medium">{token.symbol}</div>
@@ -140,17 +164,15 @@ const TokenHoldings = ({
                   </div>
                 </td>
                 <td className="p-3 text-right">
-                  ${parseFloat(token.usd_price).toFixed(8)}
-                </td>
-                <td
-                  className={`p-3 text-right ${
-                    token.usd_price_24hr_percent_change >= 0
-                      ? "text-dex-green"
-                      : "text-dex-red"
-                  }`}
-                >
-                  {formatPercentChange(token.usd_price_24hr_percent_change)}
-                </td>
+            ${token.usd_price ? parseFloat(token.usd_price).toFixed(8) : "-"}
+                      </td>
+                      <td className={`p-3 text-right ${
+              (token.usd_price_24hr_percent_change || 0) >= 0
+                ? "text-dex-green"
+                : "text-dex-red"
+            }`}>
+              {formatPercentChange(token.usd_price_24hr_percent_change)}
+            </td>
                 <td className="p-3 text-right">
                   {formatTokenAmount(token.balance, token.decimals)}
                 </td>

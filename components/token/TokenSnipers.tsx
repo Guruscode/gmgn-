@@ -1,36 +1,18 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Pair, Sniper } from "@/lib/tokenTypes"; 
 
-interface Token {
-  symbol: string;
-  address: string;
-}
-
-interface Pair {
-  pairAddress: string;
-  baseToken?: Token;
-  quoteToken?: Token;
-}
-
-interface SniperTransaction {
-  transactionHash: string;
-  transactionTimestamp: string;
-}
-
-interface Sniper {
-  walletAddress: string;
-  snipedTransactions: SniperTransaction[];
-  totalSnipedTransactions: number;
-  totalSellTransactions: number;
-  totalSnipedUsd: number | string;
-  totalSoldUsd: number | string;
-  realizedProfitUsd: number | string;
-  realizedProfitPercentage: number;
-  currentBalanceUsdValue: number | string;
+interface TokenSnipersProps {
+  pair: Pair | null;
+  chainId: string;
 }
 
 interface TokenSnipersProps {
   pair: Pair | null;
   chainId: string;
+  token: {
+    symbol: string;
+    address: string;
+  } | null;
 }
 
 const API_KEY = process.env.NEXT_PUBLIC_MORALIS_API_KEY;
@@ -39,13 +21,12 @@ const TokenSnipers: React.FC<TokenSnipersProps> = ({ pair, chainId }) => {
   const [snipers, setSnipers] = useState<Sniper[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tableHeight, setTableHeight] = useState(400); // Default height
+  const [tableHeight, setTableHeight] = useState(400);
   const tableRef = useRef<HTMLTableElement>(null);
   const resizeRef = useRef<HTMLDivElement>(null);
   const startYRef = useRef(0);
   const startHeightRef = useRef(0);
 
-  // Block explorer URLs by chain
   const blockExplorers: Record<string, string> = {
     "0x1": "https://etherscan.io",
     "0x38": "https://bscscan.com",
@@ -95,19 +76,13 @@ const TokenSnipers: React.FC<TokenSnipersProps> = ({ pair, chainId }) => {
     };
   }, [tableHeight]);
 
-  // Fetch snipers data when component mounts
-  useEffect(() => {
-    fetchSnipers();
-  }, [pair, chainId]);
-
   // Fetch snipers data
-  const fetchSnipers = async () => {
+  const fetchSnipers = useCallback(async () => {
     if (!pair || !pair.pairAddress) return;
 
     setLoading(true);
     try {
       let url;
-      // Use 1000 blocks after creation as default parameter
       const blocksAfterCreation = 1000;
 
       if (isSolana) {
@@ -119,10 +94,10 @@ const TokenSnipers: React.FC<TokenSnipersProps> = ({ pair, chainId }) => {
       console.log("Fetching snipers from:", url);
 
       const response = await fetch(url, {
-        headers: {
+        headers: new Headers({
           accept: "application/json",
-          "X-API-Key": API_KEY,
-        },
+          "X-API-Key": API_KEY || "",
+        }),
       });
 
       if (!response.ok) {
@@ -141,7 +116,12 @@ const TokenSnipers: React.FC<TokenSnipersProps> = ({ pair, chainId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pair, chainId, isSolana]);
+
+  // Fetch snipers data when component mounts
+  useEffect(() => {
+    fetchSnipers();
+  }, [fetchSnipers]);
 
   // Format wallet address (truncate)
   const formatWalletAddress = (address: string | undefined) => {
@@ -160,30 +140,6 @@ const TokenSnipers: React.FC<TokenSnipersProps> = ({ pair, chainId }) => {
     } else {
       return `${explorer}/address/${walletAddress}`;
     }
-  };
-
-  // Get explorer URL for the transaction
-  const getExplorerUrl = (txHash: string) => {
-    const explorer = blockExplorers[chainId] || "";
-
-    if (!explorer) return "#";
-
-    if (isSolana) {
-      return `${explorer}/tx/${txHash}`;
-    } else {
-      return `${explorer}/tx/${txHash}`;
-    }
-  };
-
-  // Format numbers with commas
-  const formatNumber = (num: number | string | undefined, decimals = 0) => {
-    if (num === undefined || num === null) return "0";
-
-    const parsedNum = typeof num === "string" ? parseFloat(num) : num;
-    return parsedNum.toLocaleString(undefined, {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    });
   };
 
   // Format USD values

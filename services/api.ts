@@ -19,10 +19,10 @@ export const getTrendingTokens = async (chain = "", limit = 100) => {
     console.log("Fetching trending tokens from:", url);
 
     const response = await fetch(url, {
-      headers: {
+      headers: new Headers({
         accept: "application/json",
-        "X-API-Key": API_KEY,
-      },
+        "X-API-Key": API_KEY || "",
+      }),
     });
 
     if (!response.ok) {

@@ -67,10 +67,10 @@ const TokenHolderInsights: React.FC<TokenHolderInsightsProps> = ({ token, chainI
         console.log("Fetching holder insights from:", url);
 
         const response = await fetch(url, {
-          headers: {
+          headers: new Headers({
             accept: "application/json",
-            "X-API-Key": API_KEY,
-          },
+            "X-API-Key": API_KEY || "",
+          }),
         });
 
         if (!response.ok) {
@@ -349,8 +349,9 @@ const TokenHolderInsights: React.FC<TokenHolderInsightsProps> = ({ token, chainI
           Holders Acquisition
         </h3>
         <p className="text-sm text-dex-text-secondary mb-4">
-          Based on the wallet's first interaction.
-        </p>
+  Based on the wallet&apos;s first interaction.
+</p>
+
 
         <div className="h-64 flex items-center justify-center">
           <Doughnut data={acquisitionData} options={acquisitionOptions} />

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 
 interface Token {
   address: string;
@@ -28,7 +29,7 @@ const TokenHolders: React.FC<TokenHoldersProps> = ({ token, chainId }) => {
   const [holders, setHolders] = useState<Holder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tableHeight, setTableHeight] = useState(400); // Default height
+  const [tableHeight, setTableHeight] = useState(400);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const tableRef = useRef<HTMLTableElement>(null);
@@ -36,7 +37,6 @@ const TokenHolders: React.FC<TokenHoldersProps> = ({ token, chainId }) => {
   const startYRef = useRef(0);
   const startHeightRef = useRef(0);
 
-  // Block explorer URLs by chain
   const blockExplorers: Record<string, string> = {
     "0x1": "https://etherscan.io",
     "0x38": "https://bscscan.com",
@@ -54,7 +54,6 @@ const TokenHolders: React.FC<TokenHoldersProps> = ({ token, chainId }) => {
 
   const isSolana = chainId === "solana";
 
-  // Initialize resize functionality
   useEffect(() => {
     const resizeHandle = resizeRef.current;
     if (!resizeHandle) return;
@@ -78,7 +77,6 @@ const TokenHolders: React.FC<TokenHoldersProps> = ({ token, chainId }) => {
     };
 
     resizeHandle.addEventListener("mousedown", onMouseDown);
-
     return () => {
       resizeHandle.removeEventListener("mousedown", onMouseDown);
       document.removeEventListener("mousemove", onMouseMove);
@@ -86,108 +84,82 @@ const TokenHolders: React.FC<TokenHoldersProps> = ({ token, chainId }) => {
     };
   }, [tableHeight]);
 
-  // Fetch holders data when component mounts
+  const fetchHolders = useCallback(
+    async (nextCursor: string | null = null) => {
+      if (!token || !token.address || isSolana) return;
+
+      setLoading(true);
+      try {
+        let url = `https://deep-index.moralis.io/api/v2.2/erc20/${token.address}/owners?chain=${chainId}&order=DESC`;
+        if (nextCursor) url += `&cursor=${nextCursor}`;
+
+        const response = await fetch(url, {
+          headers: {
+            accept: "application/json",
+            "X-API-Key": API_KEY!,
+          },
+        });
+
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
+
+        const data = await response.json();
+        if (data && data.result) {
+          setHolders((prev) =>
+            nextCursor ? [...prev, ...data.result] : data.result
+          );
+          setCursor(data.cursor);
+          setHasMore(data.result.length > 0 && !!data.cursor);
+        }
+      } catch (err) {
+        console.error("Error fetching holders:", err);
+        setError("Failed to load holders data");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [token, chainId, isSolana]
+  );
+
   useEffect(() => {
     if (token && token.address && !isSolana) {
       fetchHolders();
     }
-  }, [token, chainId]);
+  }, [token, chainId, fetchHolders, isSolana]);
 
-  // Fetch holders data
-  const fetchHolders = async (nextCursor: string | null = null) => {
-    if (!token || !token.address || isSolana) return;
-
-    setLoading(true);
-    try {
-      let url = `https://deep-index.moralis.io/api/v2.2/erc20/${token.address}/owners?chain=${chainId}&order=DESC`;
-
-      if (nextCursor) {
-        url += `&cursor=${nextCursor}`;
-      }
-
-      console.log("Fetching holders from:", url);
-
-      const response = await fetch(url, {
-        headers: {
-          accept: "application/json",
-          "X-API-Key": API_KEY,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log("Holders response:", data);
-
-      if (data && data.result) {
-        if (nextCursor) {
-          setHolders((prev) => [...prev, ...data.result]);
-        } else {
-          setHolders(data.result);
-        }
-
-        setCursor(data.cursor);
-        setHasMore(data.result.length > 0 && data.cursor);
-      }
-    } catch (err) {
-      console.error("Error fetching holders:", err);
-      setError("Failed to load holders data");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Load more holders
   const loadMore = () => {
     if (cursor && hasMore && !loading) {
       fetchHolders(cursor);
     }
   };
 
-  // Format wallet address (truncate)
-  const formatWalletAddress = (address: string | undefined) => {
-    if (!address) return "";
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
+  const formatWalletAddress = (address: string | undefined) =>
+    address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "";
 
-  // Get wallet explorer URL
   const getWalletExplorerUrl = (walletAddress: string) => {
     const explorer = blockExplorers[chainId] || "";
-    if (!explorer) return "#";
     return `${explorer}/address/${walletAddress}`;
   };
 
-  // Format numbers with commas
   const formatNumber = (num: number | string | undefined, decimals = 0) => {
-    if (num === undefined || num === null) return "0";
-
-    const parsedNum = typeof num === "string" ? parseFloat(num) : num;
-    return parsedNum.toLocaleString(undefined, {
+    if (num == null) return "0";
+    const parsed = typeof num === "string" ? parseFloat(num) : num;
+    return parsed.toLocaleString(undefined, {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
     });
   };
 
-  // Format USD values
   const formatUsd = (value: number | string | undefined) => {
     if (!value) return "$0.00";
-
-    const numValue = typeof value === "string" ? parseFloat(value) : value;
-
+    const num = typeof value === "string" ? parseFloat(value) : value;
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(numValue);
+    }).format(num);
   };
 
-  // Format percentage values
   const formatPercentage = (value: number | undefined) => {
     if (!value) return "0%";
-
     return new Intl.NumberFormat("en-US", {
       style: "percent",
       minimumFractionDigits: 2,
@@ -195,35 +167,31 @@ const TokenHolders: React.FC<TokenHoldersProps> = ({ token, chainId }) => {
     }).format(value / 100);
   };
 
-  if (isSolana) {
+  if (isSolana)
     return (
       <div className="p-4 text-center text-dex-text-secondary">
         Holder data is not available for Solana tokens
       </div>
     );
-  }
 
-  if (!token) {
+  if (!token)
     return (
       <div className="p-4 text-center text-dex-text-secondary">
         No token data available
       </div>
     );
-  }
 
-  if (loading && holders.length === 0) {
+  if (loading && holders.length === 0)
     return (
       <div className="p-4 text-center text-dex-text-secondary">
         Loading holders data...
       </div>
     );
-  }
 
-  if (error && holders.length === 0) {
+  if (error && holders.length === 0)
     return (
       <div className="p-4 text-center text-dex-text-secondary">{error}</div>
     );
-  }
 
   return (
     <div className="flex flex-col w-full">
@@ -231,124 +199,100 @@ const TokenHolders: React.FC<TokenHoldersProps> = ({ token, chainId }) => {
         className="overflow-auto border border-dex-border bg-dex-bg-primary"
         style={{ height: `${tableHeight}px` }}
       >
-        <table
-          ref={tableRef}
-          className="w-full text-sm text-left border-collapse"
-        >
+        <table ref={tableRef} className="w-full text-sm text-left border-collapse">
           <thead className="text-xs uppercase bg-dex-bg-secondary sticky top-0 z-10">
             <tr className="border-b border-dex-border">
-              <th className="px-4 py-3 whitespace-nowrap">RANK</th>
-              <th className="px-4 py-3 whitespace-nowrap">WALLET</th>
-              <th className="px-4 py-3 whitespace-nowrap">ENTITY</th>
-              <th className="px-4 py-3 whitespace-nowrap">TYPE</th>
-              <th className="px-4 py-3 text-right whitespace-nowrap">
-                BALANCE
-              </th>
-              <th className="px-4 py-3 text-right whitespace-nowrap">
-                VALUE (USD)
-              </th>
-              <th className="px-4 py-3 text-right whitespace-nowrap">
-                % OF SUPPLY
-              </th>
-              <th className="px-4 py-3 text-right whitespace-nowrap">EXP</th>
+              <th className="px-4 py-3">RANK</th>
+              <th className="px-4 py-3">WALLET</th>
+              <th className="px-4 py-3">ENTITY</th>
+              <th className="px-4 py-3">TYPE</th>
+              <th className="px-4 py-3 text-right">BALANCE</th>
+              <th className="px-4 py-3 text-right">VALUE (USD)</th>
+              <th className="px-4 py-3 text-right">% OF SUPPLY</th>
+              <th className="px-4 py-3 text-right">EXP</th>
             </tr>
           </thead>
           <tbody>
-            {holders.map((holder, index) => {
-              return (
-                <tr
-                  key={`${holder.owner_address}_${index}`}
-                  className="border-b border-dex-border hover:bg-dex-bg-secondary/50"
-                >
-                  <td className="px-4 py-3 whitespace-nowrap">{index + 1}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <a
-                      href={getWalletExplorerUrl(holder.owner_address)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-mono hover:text-dex-blue flex items-center"
-                    >
-                      <span className="bg-dex-bg-tertiary text-dex-text-primary px-1 rounded mr-1">
-                        {holder.is_contract ? "📄" : "👤"}
-                      </span>
-                      {formatWalletAddress(holder.owner_address)}
-                    </a>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {holder.owner_address_label ? (
-                      <div className="flex items-center">
-                        {holder.entity_logo && (
-                          <img
-                            src={holder.entity_logo}
-                            alt={holder.entity || "Entity"}
-                            className="w-4 h-4 mr-1 rounded-full"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                            }}
-                          />
-                        )}
-                        <span className="text-dex-text-primary">
-                          {holder.owner_address_label}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-dex-text-secondary">-</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {holder.is_contract ? (
-                      <span className="bg-blue-500/20 text-blue-500 px-2 py-0.5 rounded text-xs">
-                        Contract
-                      </span>
-                    ) : (
-                      <span className="bg-green-500/20 text-green-500 px-2 py-0.5 rounded text-xs">
-                        Wallet
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap font-mono">
-                    {formatNumber(holder.balance_formatted, 4)}
-                  </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    {formatUsd(holder.usd_value)}
-                  </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    {formatPercentage(
-                      holder.percentage_relative_to_total_supply
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <a
-                      href={getWalletExplorerUrl(holder.owner_address)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5 text-dex-text-secondary hover:text-dex-blue"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+            {holders.map((holder, index) => (
+              <tr key={`${holder.owner_address}_${index}`} className="border-b border-dex-border hover:bg-dex-bg-secondary/50">
+                <td className="px-4 py-3">{index + 1}</td>
+                <td className="px-4 py-3">
+                  <a
+                    href={getWalletExplorerUrl(holder.owner_address)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono hover:text-dex-blue flex items-center"
+                  >
+                    <span className="bg-dex-bg-tertiary text-dex-text-primary px-1 rounded mr-1">
+                      {holder.is_contract ? "📄" : "👤"}
+                    </span>
+                    {formatWalletAddress(holder.owner_address)}
+                  </a>
+                </td>
+                <td className="px-4 py-3">
+                  {holder.owner_address_label ? (
+                    <div className="flex items-center">
+                      {holder.entity_logo && (
+                        <Image
+                          src={holder.entity_logo}
+                          alt={holder.entity || "Entity"}
+                          width={16}
+                          height={16}
+                          className="mr-1 rounded-full"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = "none";
+                          }}
                         />
-                      </svg>
-                    </a>
-                  </td>
-                </tr>
-              );
-            })}
+                      )}
+                      <span className="text-dex-text-primary">{holder.owner_address_label}</span>
+                    </div>
+                  ) : (
+                    <span className="text-dex-text-secondary">-</span>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  {holder.is_contract ? (
+                    <span className="bg-blue-500/20 text-blue-500 px-2 py-0.5 rounded text-xs">Contract</span>
+                  ) : (
+                    <span className="bg-green-500/20 text-green-500 px-2 py-0.5 rounded text-xs">Wallet</span>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-right font-mono">
+                  {formatNumber(holder.balance_formatted, 4)}
+                </td>
+                <td className="px-4 py-3 text-right">{formatUsd(holder.usd_value)}</td>
+                <td className="px-4 py-3 text-right">
+                  {formatPercentage(holder.percentage_relative_to_total_supply)}
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <a
+                    href={getWalletExplorerUrl(holder.owner_address)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 text-dex-text-secondary hover:text-dex-blue"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
+                    </svg>
+                  </a>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
 
-      {/* Load more button */}
       {hasMore && (
         <div className="mt-2 text-center">
           <button
@@ -361,7 +305,6 @@ const TokenHolders: React.FC<TokenHoldersProps> = ({ token, chainId }) => {
         </div>
       )}
 
-      {/* Resize handle */}
       <div
         ref={resizeRef}
         className="h-2 bg-dex-bg-secondary hover:bg-dex-blue cursor-ns-resize flex items-center justify-center"

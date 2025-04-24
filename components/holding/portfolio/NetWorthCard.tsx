@@ -1,8 +1,25 @@
-// components/portfolio/NetWorthCard.js
+// components/portfolio/NetWorthCard.tsx
 import React from "react";
+import Image from "next/image";
 
-const NetWorthCard = ({ netWorth, loading, error }) => {
-  const formatCurrency = (value) => {
+interface Chain {
+  chain: string;
+  networth_usd: string;
+}
+
+interface NetWorth {
+  total_networth_usd: string;
+  chains: Chain[];
+}
+
+interface NetWorthCardProps {
+  netWorth: NetWorth | null;
+  loading: boolean;
+  error: string | null;
+}
+
+const NetWorthCard: React.FC<NetWorthCardProps> = ({ netWorth, loading, error }) => {
+  const formatCurrency = (value: string): string => {
     if (!value) return "$0.00";
 
     const numValue = parseFloat(value);
@@ -62,10 +79,12 @@ const NetWorthCard = ({ netWorth, loading, error }) => {
                     backgroundColor: getChainColor(chain.chain),
                   }}
                 >
-                  <img
+                 <Image
                     src={getChainIcon(chain.chain)}
                     alt={chain.chain}
-                    className="w-full h-full object-contain"
+                    width={20}  // Set a fixed width and height for Image
+                    height={20}
+                    className="object-contain"
                   />
                 </div>
                 <div className="text-xs font-medium uppercase">
@@ -83,8 +102,8 @@ const NetWorthCard = ({ netWorth, loading, error }) => {
   );
 };
 
-const getChainIcon = (chainId) => {
-  const chainMap = {
+const getChainIcon = (chainId: string): string => {
+  const chainMap: Record<string, string> = {
     eth: "ethereum",
     "0x1": "ethereum",
     solana: "solana",
@@ -114,8 +133,8 @@ const getChainIcon = (chainId) => {
   return `/images/chains/${chain}.svg`;
 };
 
-const getChainColor = (chainId) => {
-  const colorMap = {
+const getChainColor = (chainId: string): string => {
+  const colorMap: Record<string, string> = {
     eth: "#627EEA",
     bsc: "#F3BA2F",
     polygon: "#8247E5",

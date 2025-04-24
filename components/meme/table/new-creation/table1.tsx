@@ -1,6 +1,6 @@
-import TableBody from "./body";
-import TableHead from "./head";
-import Colgroup from "./colgroup";
+// import TableBody from "./body";
+// import TableHead from "./head";
+// import Colgroup from "./colgroup";
 
 
 export default function NewCreation() {

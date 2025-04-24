@@ -128,3 +128,32 @@ export function localStore(key: string) {
   if (typeof window == "undefined") return;
   return window.localStorage.getItem(key);
 }
+// Example utility functions
+export function formatPriceWithColor(price: number): { text: string, color: string } {
+  const color = price > 0 ? 'text-green-500' : 'text-red-500';
+  return { text: `$${price.toFixed(2)}`, color };
+}
+
+export function getBaseTokenValue(tx: any): { value: number } {
+  // Assuming `tx` has a field that holds the base token value
+  return { value: tx.baseTokenValue || 0 };
+}
+
+export function formatValueWithColor(value: number, transactionType: string): { text: string, color: string } {
+  const color = transactionType === 'buy' ? 'text-green-500' : 'text-red-500';
+  return { text: `$${value.toFixed(2)}`, color };
+}
+
+
+export interface Token {
+  tokenAddress: string;
+  symbol?: string;
+  name?: string;
+  logo?: string;
+  priceUsd?: string;
+  liquidity?: string;
+  fullyDilutedValuation?: string;
+  graduatedAt?: string;
+  isNew?: boolean;  // Allow `isNew` to be a boolean
+  [key: string]: string | number | boolean | undefined;  // Allow boolean as a valid type
+}

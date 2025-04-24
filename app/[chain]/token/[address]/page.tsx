@@ -1,4 +1,4 @@
-"use client";
+"use client"
 import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import TokenChart from "@/components/token/TokenChart";
@@ -9,6 +9,8 @@ import TokenTransactions from "@/components/token/TokenTransactions";
 import TokenHolders from "@/components/token/TokenHolders";
 import TokenSnipers from "@/components/token/TokenSnipers";
 import TokenHolderInsights from "@/components/token/TokenHolderInsights";
+
+import { Pair, Token } from "@/lib/tokenTypes";
 
 const API_KEY = process.env.NEXT_PUBLIC_MORALIS_API_KEY;
 
@@ -28,40 +30,16 @@ const PATH_TO_CHAIN_ID: Record<string, string> = {
   ronin: "0x7e4",
 };
 
-type Token = {
-  tokenAddress: string;
-  tokenName: string;
-  tokenSymbol: string;
-  tokenLogo: string;
-  tokenDecimals: string;
-  pairTokenType?: string;
-  liquidityUsd?: number;
-};
 
-type Pair = {
-  chainId: string;
-  pairAddress: string;
-  exchangeName: string;
-  exchangeLogo: string;
-  pairLabel: string;
-  liquidityUsd: number;
-  usdPrice: number;
-  usdPrice24hrPercentChange: number;
-  volume24hrUsd: number;
-  baseToken: Token;
-  quoteToken: Token;
-  pair: Token[];
-};
 
-type TokenMeta = {
+export type TokenMeta = {
   address: string;
   name: string;
   symbol: string;
-  logo: string | null;
+  logo: string | undefined; // Change from string | null to string | undefined
   decimals: string;
 };
-
-type PairData = {
+export type PairData = {
   pairAddress: string;
   exchangeName: string;
   exchangeLogo: string;
@@ -125,25 +103,29 @@ const TokenPage: React.FC = () => {
 
         const normalizedPairs: Pair[] = pairsData.map((pair: PairData) => ({
           chainId,
-          pairAddress: pair.pairAddress ,
-          exchangeName: pair.exchangeName ,
+          pairAddress: pair.pairAddress,
+          exchangeName: pair.exchangeName,
           exchangeLogo: pair.exchangeLogo,
-          pairLabel: pair.pairLabel ,
-          liquidityUsd: pair.liquidityUsd ,
-          usdPrice: pair.usdPrice ,
-          usdPrice24hrPercentChange: pair.usdPrice24hrPercentChange ,
-          volume24hrUsd: pair.volume24hrUsd ,
-          baseToken: pair.baseToken ,
-          quoteToken: pair.quoteToken ,
+          pairLabel: pair.pairLabel,
+          liquidityUsd: pair.liquidityUsd,
+          usdPrice: pair.usdPrice,
+          usdPrice24hrPercentChange: pair.usdPrice24hrPercentChange,
+          volume24hrUsd: pair.volume24hrUsd,
+          baseToken: {
+            ...pair.baseToken,
+            symbol: pair.baseToken.tokenSymbol,
+            address: pair.baseToken.tokenAddress
+          },
+          quoteToken: {
+            ...pair.quoteToken,
+            symbol: pair.quoteToken.tokenSymbol,
+            address: pair.quoteToken.tokenAddress
+          },
           pair: Array.isArray(pair.pair)
             ? pair.pair.map((token: Token) => ({
-                tokenAddress: token.tokenAddress,
-                tokenName: token.tokenName,
-                tokenSymbol: token.tokenSymbol,
-                tokenLogo: token.tokenLogo,
-                tokenDecimals: token.tokenDecimals,
-                pairTokenType: token.pairTokenType,
-                liquidityUsd: token.liquidityUsd,
+                ...token,
+                symbol: token.tokenSymbol,
+                address: token.tokenAddress
               }))
             : [],
         }));
@@ -157,19 +139,23 @@ const TokenPage: React.FC = () => {
           );
           const fallbackToken = normalizedPairs[0].pair[0];
           setTokenInfo({
-            address: Array.isArray(tokenAddress) ? tokenAddress[0] : tokenAddress || '', 
+            address: Array.isArray(tokenAddress) ? tokenAddress[0] : tokenAddress || '',
             name: currentToken?.tokenName || fallbackToken?.tokenName || `Token ${tokenAddress?.slice(0, 6)}...`,
             symbol: currentToken?.tokenSymbol || fallbackToken?.tokenSymbol || "TOKEN",
-            logo: currentToken?.tokenLogo || fallbackToken?.tokenLogo || null,
+            logo: currentToken?.tokenLogo || fallbackToken?.tokenLogo || undefined,
             decimals: currentToken?.tokenDecimals || fallbackToken?.tokenDecimals || "18",
           });
-          
         }
 
         setLoadingState("complete");
-      } catch (err: any) {
-        console.error("Error fetching token pairs:", err);
-        setError(`Error loading token data: ${err.message}`);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          console.error("Error fetching token pairs:", err);
+          setError(`Error loading token data: ${err.message}`);
+        } else {
+          console.error("Unknown error fetching token pairs:", err);
+          setError("An unknown error occurred while loading token data.");
+        }
         setLoadingState("complete");
       }
     };
@@ -234,7 +220,9 @@ const TokenPage: React.FC = () => {
         <TokenTabs activeTab={activeTab} onChange={setActiveTab} isSolana={isSolana} />
       </div>
       <div className="flex-1 overflow-auto">
-        {activeTab === "transactions" && selectedPair && <TokenTransactions pair={selectedPair} chainId={selectedPair.chainId} />}
+        {activeTab === "transactions" && selectedPair && (
+          <TokenTransactions pair={selectedPair} chainId={selectedPair.chainId} />
+        )}
         {activeTab === "holders" && tokenInfo && <TokenHolders token={tokenInfo} chainId={chainId} />}
         {activeTab === "holder-insights" && tokenInfo && <TokenHolderInsights token={tokenInfo} chainId={chainId} />}
         {activeTab === "snipers" && tokenInfo && selectedPair && (

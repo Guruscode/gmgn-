@@ -1,5 +1,5 @@
 "use client";
-import { localStore, themeMode, truncAddress, updateUrlParams } from '@/lib/utils'
+import { localStore, themeMode, updateUrlParams } from '@/lib/utils'
 import Image from 'next/image'
 import React, { useCallback, useEffect, useState } from 'react'
 import {
@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 import { Switch } from "@/components/ui/switch"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { Dialog, DialogContent, DialogTrigger } from '../ui/dialog';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import SearchModal from '@/components/SearchModal'; // Import the SearchModal component
@@ -101,7 +101,7 @@ export default function Header() {
         if (pathname == "/meme" && params.get("chain") != "sol") {
             router.push("/")
         }
-    }, [pathname, params])
+    }, [pathname, params, router])
 
     const getChain = useCallback(() => {
         return params.get("chain")
