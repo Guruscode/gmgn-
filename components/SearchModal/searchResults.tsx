@@ -83,7 +83,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, onClose }) => {
     const chain = chainMap[chainId] || "generic";
     return `/images/chains/${chain}.svg`;
   };
-  const handleTokenClick = (token: Token) => {
+  const handleTokenClick = async (token: Token) => {
     const chainPathMap: Record<string, { path: string; query: string }> = {
       "0x1": { path: "ethereum", query: "eth" },
       solana: { path: "solana", query: "sol" },
@@ -97,8 +97,14 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, onClose }) => {
     const chainData = chainPathMap[token.chainId] || { path: token.chainId, query: token.chainId };
     const path = `/${chainData.path}/token/${token.tokenAddress}?chain=${chainData.query}`;
     
-    handleNavigate(path);
+    // Close the modal first
     onClose();
+    
+    // Small delay to ensure modal is closed before navigation
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Then navigate
+    handleNavigate(path);
   };
   
   if (results.length === 0) {
@@ -108,11 +114,12 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results, onClose }) => {
   return (
     <div>
       {results.map((token) => (
-        <div
-          key={`${token.chainId}-${token.tokenAddress}`}
-          className="p-4 hover:bg-gray-700 cursor-pointer border-b border-gray-700 flex items-center"
-          onClick={() => handleTokenClick(token)}
-        >
+       <div
+       key={`${token.chainId}-${token.tokenAddress}`}
+       className="p-4 hover:bg-gray-700 cursor-pointer border-b border-gray-700 flex items-center"
+       onClick={() => handleTokenClick(token)}
+       onTouchEnd={() => handleTokenClick(token)}
+     >
           <div className="flex items-center flex-1">
             <div className="flex-shrink-0 relative mr-3">
             <Image

@@ -21,6 +21,12 @@ import { Dialog, DialogContent, DialogTrigger } from '../ui/dialog';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import SearchModal from '@/components/SearchModal'; // Import the SearchModal component
+import {  useAccount, useDisconnect } from "wagmi";
+import {  ConnectButton } from "@rainbow-me/rainbowkit"; 
+// import { QueryClient } from "@tanstack/react-query";
+
+// const queryClient = new QueryClient();
+
 
 export default function Header() {
     const pathname = usePathname()
@@ -28,6 +34,40 @@ export default function Header() {
     const router = useRouter()
     const [switchMode, setSwitchMode] = useState(false)
     const [isSearchModalOpen, setSearchModalOpen] = useState(false)
+    // const [walletAddress, setWalletAddress] = useState('');
+    const { address, isConnected } = useAccount();  // Get current account address and connection state
+    // const { connect, connectors } = useConnect();  // Get available connectors (e.g., MetaMask)
+    const { disconnect } = useDisconnect(); // Hook for disconnecting
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+
+    const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
+
+    // const handleConnect = () => {
+    //     // Automatically connect using the first available connector (e.g., MetaMask)
+    //     connect({ connector: connectors[0] });
+
+    //   };
+    
+      const handleDisconnect = () => {
+        disconnect();  // Disconnect the wallet
+      };
+    
+
+
+    // const handleConnect = () => {
+    //     // Open wallet modal logic
+    //     // On success:
+    //     setIsConnected(true);
+    //     setWalletAddress("0xABC...123"); // Use actual wallet address
+    //   };
+      
+    //   const handleDisconnect = () => {
+    //     setIsConnected(false);
+    //     setWalletAddress('');
+    //   };
+      
+
+
     const navLinks = [
         {
             link: "/meme",
@@ -264,7 +304,59 @@ export default function Header() {
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
-                    <button className='md:px-4 px-2 py-[0.4rem] rounded-md bg-accent-4 text-xs font-[600] text-white dark:text-black'>Connect</button>
+                    {isConnected ? (
+        <div className="flex items-center space-x-3">
+          <div className="relative">
+            <button
+              onClick={toggleDropdown}
+              className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 text-white font-bold flex items-center justify-center hover:opacity-90 transition"
+            >
+              {address?.slice(2, 4).toUpperCase()}
+            </button>
+
+            {dropdownOpen && (
+            <div className="absolute right-0 mt-3 w-56 bg-gradient-to-b from-gray-900 to-gray-800 shadow-2xl rounded-xl py-3 z-50 border border-gray-700 overflow-hidden">
+                {/* Wallet Address */}
+                <div className="px-4 py-3 text-sm text-gray-300 border-b border-gray-700 flex items-center">
+                <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+                <span className="font-mono">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
+                </div>
+                
+            
+                {/* Menu Items */}
+                <button className="block w-full text-left px-4 py-3 text-sm text-gray-200 hover:bg-gray-700/50 transition-colors flex items-center">
+                <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+                My Wallet
+                </button>
+            
+                31
+            
+                
+                {/* Disconnect Button */}
+                <button
+                onClick={() => {
+                    handleDisconnect();
+                    setDropdownOpen(false);
+                }}
+                className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-gray-700/50 transition-colors border-t border-gray-700 mt-2 flex items-center"
+                >
+                <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Disconnect
+                </button>
+                
+            
+            </div>
+            )}
+                </div>
+                </div>
+            ) : (
+                <ConnectButton />
+            )}
+
                 </div>
             </div>
             <div className="bg-accent-3 border-t w-full overflow-x-auto">
