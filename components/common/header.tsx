@@ -20,13 +20,9 @@ import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogTrigger } from '../ui/dialog';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import SearchModal from '@/components/SearchModal'; // Import the SearchModal component
-import {  useAccount, useDisconnect } from "wagmi";
-import {  ConnectButton } from "@rainbow-me/rainbowkit"; 
-// import { QueryClient } from "@tanstack/react-query";
-
-// const queryClient = new QueryClient();
-
+import SearchModal from '@/components/SearchModal';
+import { useDisconnect } from "wagmi";
+import { ConnectButton } from "@rainbow-me/rainbowkit"; 
 
 export default function Header() {
     const pathname = usePathname()
@@ -34,39 +30,13 @@ export default function Header() {
     const router = useRouter()
     const [switchMode, setSwitchMode] = useState(false)
     const [isSearchModalOpen, setSearchModalOpen] = useState(false)
-    // const [walletAddress, setWalletAddress] = useState('');
-    const { address, isConnected } = useAccount();  // Get current account address and connection state
-    // const { connect, connectors } = useConnect();  // Get available connectors (e.g., MetaMask)
-    const { disconnect } = useDisconnect(); // Hook for disconnecting
+    // const { address, isConnected } = useAccount();
+    const { disconnect } = useDisconnect();
     const [dropdownOpen, setDropdownOpen] = useState(false);
-
-    const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
-
-    // const handleConnect = () => {
-    //     // Automatically connect using the first available connector (e.g., MetaMask)
-    //     connect({ connector: connectors[0] });
-
-    //   };
-    
-      const handleDisconnect = () => {
-        disconnect();  // Disconnect the wallet
-      };
-    
-
-
-    // const handleConnect = () => {
-    //     // Open wallet modal logic
-    //     // On success:
-    //     setIsConnected(true);
-    //     setWalletAddress("0xABC...123"); // Use actual wallet address
-    //   };
-      
-    //   const handleDisconnect = () => {
-    //     setIsConnected(false);
-    //     setWalletAddress('');
-    //   };
-      
-
+    // const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
+    const handleDisconnect = () => {
+        disconnect();
+    };
 
     const navLinks = [
         {
@@ -114,7 +84,6 @@ export default function Header() {
         }
     ]
 
-
     const language = [
         {
             lang: "English"
@@ -130,14 +99,10 @@ export default function Header() {
         },
     ]
 
-
-
     useEffect(() => {
         themeMode().default()
         setSwitchMode(themeMode().getFromStore() == "dark")
         updateUrlParams({ chain: localStore("network") || "sol" })
-
-
         if (pathname == "/meme" && params.get("chain") != "sol") {
             router.push("/")
         }
@@ -146,7 +111,6 @@ export default function Header() {
     const getChain = useCallback(() => {
         return params.get("chain")
     }, [params])
-
 
     return (
         <div className="">
@@ -159,7 +123,6 @@ export default function Header() {
                     </div>
                     <ul className="md:flex gap-3 hidden overflow-hidden">
                         {navLinks.map((item, index) => {
-                            // Special case for Meme link on Solana chain
                             if (item.link === '/meme' && getChain() !== 'sol') {
                                 return null;
                             }
@@ -167,7 +130,6 @@ export default function Header() {
                             const isActive = pathname === item.link;
                             const linkClassName = `h-full w-full ${isActive ? 'dark:text-white text-black' : 'text-accent-1'}`;
 
-                            // Avoid wrapping Link inside another <a> tag
                             return (
                                 <li key={index} className="font-medium text-sm whitespace-nowrap">
                                     <Link
@@ -180,7 +142,6 @@ export default function Header() {
                             );
                         })}
                     </ul>
-
                 </div>
 
                 <div className="relative max-w-[440px] w-full md:flex mx-[24px] hidden">
@@ -199,7 +160,6 @@ export default function Header() {
                         </div>
                     </div>
 
-                    {/* Using the SearchModal component */}
                     <SearchModal
                       isOpen={isSearchModalOpen}
                       onClose={() => setSearchModalOpen(false)}
@@ -229,7 +189,6 @@ export default function Header() {
                             </SelectContent>
                         </Select>
 
-                        {/* display on mobile -search */}
                         <Dialog>
                             <DialogTrigger>
                                 <div className='md:hidden' onClick={() => setSearchModalOpen(true)}>
@@ -237,7 +196,6 @@ export default function Header() {
                                 </div>
                             </DialogTrigger>
                             <DialogContent className='h-full bg-[#f4f4f5] w-full p-2 overflow-y-scroll'>
-                                {/* We can now use SearchModal for mobile too */}
                                 <SearchModal
                                   isOpen={isSearchModalOpen}
                                   onClose={() => setSearchModalOpen(false)}
@@ -304,72 +262,173 @@ export default function Header() {
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
-                    {isConnected ? (
-        <div className="flex items-center space-x-3">
-          <div className="relative">
-            <button
-              onClick={toggleDropdown}
-              className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 text-white font-bold flex items-center justify-center hover:opacity-90 transition"
-            >
-              {address?.slice(2, 4).toUpperCase()}
-            </button>
+                    
+                    <ConnectButton.Custom>
+                        {({
+                            account,
+                            chain,
+                      
+                            openChainModal,
+                            openConnectModal,
+                            authenticationStatus,
+                            mounted,
+                        }) => {
+                            const ready = mounted && authenticationStatus !== 'loading';
+                            const connected =
+                                ready &&
+                                account &&
+                                chain &&
+                                (!authenticationStatus || authenticationStatus === 'authenticated');
 
-            {dropdownOpen && (
-            <div className="absolute right-0 mt-3 w-56 bg-gradient-to-b from-gray-900 to-gray-800 shadow-2xl rounded-xl py-3 z-50 border border-gray-700 overflow-hidden">
-                {/* Wallet Address */}
-                <div className="px-4 py-3 text-sm text-gray-300 border-b border-gray-700 flex items-center">
-                <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
-                <span className="font-mono">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
-                </div>
-                
-            
-                {/* Menu Items */}
-                <button className="block w-full text-left px-4 py-3 text-sm text-gray-200 hover:bg-gray-700/50 transition-colors flex items-center">
-                <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-                My Wallet
-                </button>
-            
-                31
-            
-                
-                {/* Disconnect Button */}
-                <button
-                onClick={() => {
-                    handleDisconnect();
-                    setDropdownOpen(false);
-                }}
-                className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-gray-700/50 transition-colors border-t border-gray-700 mt-2 flex items-center"
-                >
-                <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                Disconnect
-                </button>
-                
-            
-            </div>
-            )}
-                </div>
-                </div>
-            ) : (
-                <ConnectButton />
-            )}
+                            return (
+                                <div
+                                    {...(!ready && {
+                                        'aria-hidden': true,
+                                        'style': {
+                                            opacity: 0,
+                                            pointerEvents: 'none',
+                                            userSelect: 'none',
+                                        },
+                                    })}
+                                >
+                                    {(() => {
+                                        if (!connected) {
+                                            return (
+                                                <button
+                                                    onClick={openConnectModal}
+                                                    className="bg-white text-black font-medium py-2 px-4 rounded-lg hover:opacity-90 transition"
+                                                >
+                                                    Connect
+                                                </button>
+                                            );
+                                        }
 
+                                        if (chain.unsupported) {
+                                            return (
+                                                <button
+                                                    onClick={openChainModal}
+                                                    className="bg-red-500 text-white font-medium py-2 px-4 rounded-lg hover:opacity-90 transition"
+                                                >
+                                                    Wrong network
+                                                </button>
+                                            );
+                                        }
+
+                                        return (
+                                            <div className="flex items-center space-x-3">
+                                                <div className="relative">
+                                                    <button
+                                                        onClick={() => setDropdownOpen(!dropdownOpen)}
+                                                        className="w-10 h-10 rounded bg-gradient-to-br from-purple-500 to-indigo-600 text-white font-bold flex items-center justify-center hover:opacity-90 transition relative"
+                                                    >
+                                                        {account.displayName.slice(2, 4).toUpperCase()}
+                                                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-gray-900"></div>
+                                                    </button>
+
+                                                    {dropdownOpen && (
+                                                        <div className="absolute right-0 mt-2 w-96 bg-gray-900 shadow-2xl rounded-lg py-2 z-50 border border-gray-800 overflow-hidden">
+                                                            <div className="py-1">
+                                                                <button className="w-full text-left px-4 py-3 text-lg text-gray-200 hover:text-white transition-all flex items-center gap-3 relative group overflow-hidden">
+                                                                    <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                                                    <div className="bg-blue-500 rounded-full p-1 w-8 h-8 flex items-center justify-center relative z-10">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                                                            <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
+                                                                        </svg>
+                                                                    </div>
+                                                                    <span className="relative z-10">Switch TG login</span>
+                                                                </button>
+                                                                
+                                                                <button className="w-full text-left px-4 py-3 text-lg text-gray-200 hover:text-white transition-all flex items-center gap-3 relative group overflow-hidden">
+                                                                    <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                                                    <div className="w-8 h-8 relative z-10"></div>
+                                                                    <span className="font-mono">{account.displayName}</span>
+                                                                </button>
+                                                                
+                                                                <div className="border-t border-gray-700 my-1"></div>
+                                                                
+                                                                <button className="w-full text-left px-4 py-3 text-lg text-gray-200 hover:text-white transition-all flex items-center gap-3 relative group overflow-hidden">
+                                                                    <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                                                    <div className="w-8 h-8 flex items-center justify-center relative z-10">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                                                            <path fillRule="evenodd" d="M2 6a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1H8a3 3 0 00-3 3v1.5a1.5 1.5 0 01-3 0V6z" clipRule="evenodd" />
+                                                                            <path d="M6 12a2 2 0 012-2h8a2 2 0 012 2v2a2 2 0 01-2 2H2h2a2 2 0 002-2v-2z" />
+                                                                        </svg>
+                                                                    </div>
+                                                                    <span className="relative z-10">My Wallet</span>
+                                                                </button>
+                                                                
+                                                                <button className="w-full text-left px-4 py-3 text-lg text-gray-200 hover:text-white transition-all flex items-center gap-3 relative group overflow-hidden">
+                                                                    <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                                                    <div className="w-8 h-8 flex items-center justify-center relative z-10">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clipRule="evenodd" />
+                                                                        </svg>
+                                                                    </div>
+                                                                    <span className="relative z-10">Referral</span>
+                                                                </button>
+                                                                
+                                                                <div className="border-t border-gray-700 my-1 "></div>
+                                                                
+                                                                <button className="w-full text-left px-4 py-3 text-lg text-white transition-all flex items-center gap-3 relative  mx-2 rounded-lg">
+                                                                    <div className="w-8 h-8 flex items-center justify-center relative z-10">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                                                            <path fillRule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clipRule="evenodd" />
+                                                                        </svg>
+                                                                    </div>
+                                                                    <span className="relative z-10">Contest(S6)</span>
+                                                                </button>
+                                                                
+                                                                <div className="border-t border-gray-700 my-1"></div>
+                                                                
+                                                                <button className="w-full text-left px-4 py-3 text-lg text-gray-200 hover:text-white transition-all flex items-center gap-3 relative group overflow-hidden">
+                                                                    <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                                                    <div className="w-8 h-8 flex items-center justify-center relative z-10">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                                                            <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+                                                                        </svg>
+                                                                    </div>
+                                                                    <span className="relative z-10">TG Alert Tutorial</span>
+                                                                </button>
+                                                                
+                                                                <div className="border-t border-gray-700 my-1"></div>
+                                                                
+                                                                <button
+                                                                    onClick={() => {
+                                                                        handleDisconnect();
+                                                                        setDropdownOpen(false);
+                                                                    }}
+                                                                    className="w-full text-left px-4 py-3 text-lg text-gray-200 hover:text-white transition-all flex items-center gap-3 relative group overflow-hidden"
+                                                                >
+                                                                    <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                                                    <div className="w-8 h-8 flex items-center justify-center relative z-10">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                                                            <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V7.414l-5-5H3zm7 5a1 1 0 10-2 0v4a1 1 0 102 0V8zm-2 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                                                                        </svg>
+                                                                    </div>
+                                                                    <span className="relative z-10">Disconnect</span>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+                            );
+                        }}
+                    </ConnectButton.Custom>
                 </div>
             </div>
             <div className="bg-accent-3 border-t w-full overflow-x-auto">
                 <ul className="md:hidden gap-3 flex py-2 px-5">
                     {navLinks.map((item, index) => {
-                        // Special case for Meme link on Solana chain
                         if (item.link === '/meme' && getChain() !== 'sol') {
                             return null;
                         }
 
                         const isActive = pathname === item.link;
-                        const linkClassName = `h-full w-full ${isActive ? 'dark:text-white text-black' : 'text-accent-1'
-                            }`;
+                        const linkClassName = `h-full w-full ${isActive ? 'dark:text-white text-black' : 'text-accent-1'}`;
 
                         return (
                             <li

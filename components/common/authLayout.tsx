@@ -2,8 +2,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import React, { useState } from 'react';
-import { useAccount } from 'wagmi'; // Import to check wallet connection status
-import { ConnectButton } from '@rainbow-me/rainbowkit'; // Import RainbowKit ConnectButton
+import { useAccount } from 'wagmi';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 export default function AuthLayout({
   setAuthModal,
@@ -14,10 +14,9 @@ export default function AuthLayout({
 }) {
   const [isModal, setAuthModalOpt] = useState(showAuth);
   setAuthModal = typeof setAuthModal == 'undefined' ? setAuthModalOpt : setAuthModal;
+  const { isConnected } = useAccount();
 
-  const { isConnected } = useAccount(); // Detect wallet connection
-
-  if (isConnected) return null; // Hide modal if connected
+  if (isConnected) return null;
 
   return (
     <div className={`font-system ${isModal ? 'flex' : 'hidden'} fixed text-[rgb(41,44,51)] dark:text-[#f4f4f5] bg-[#f4f4f5]/95 dark:bg-[#111111]/95 w-screen z-[1500] inset-0 h-screen items-center justify-center`}>
@@ -49,12 +48,64 @@ export default function AuthLayout({
             Connect Telegram
           </button>
 
-          {/* RainbowKit ConnectButton is now directly rendered */}
-          <div className="mt-4">
-            <ConnectButton />
-          </div>
+          {/* Custom ConnectButton */}
+          <ConnectButton.Custom>
+            {({
+              account,
+              chain,
+            //   openAccountModal,
+            //   openChainModal,
+              openConnectModal,
+              authenticationStatus,
+              mounted,
+            }) => {
+              const ready = mounted && authenticationStatus !== 'loading';
+              const connected =
+                ready &&
+                account &&
+                chain &&
+                (!authenticationStatus || authenticationStatus === 'authenticated');
 
-          {/* <div className="flex justify-center text-[#6E727D] dark:text-[#9AA0AA] text-[14px] font-[500] leading-[21px] mt-[16px] w-full items-center gap-[4px]">
+              return (
+                <div
+                  {...(!ready && {
+                    'aria-hidden': true,
+                    'style': {
+                      opacity: 0,
+                      pointerEvents: 'none',
+                      userSelect: 'none',
+                    },
+                  })}
+                  className="mt-4"
+                >
+                  {!connected && (
+                    <button
+                      onClick={openConnectModal}
+                      className="bg-gradient-to-br text-white font-[600] max-w-[284px] w-full min-w-[2.5rem] inline-flex gap-[8px] rounded-[8px] justify-center items-center px-[52px] h-[48px] whitespace-nowrap select-none hover:opacity-90 transition"
+                    >
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        width="20px" 
+                        height="20px" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        strokeWidth="2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round"
+                      >
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                      </svg>
+                      Or Sign In With Wallet →
+         
+                    </button>
+                  )}
+                </div>
+              );
+            }}
+          </ConnectButton.Custom>
+{/* 
+          <div className="flex justify-center text-[#6E727D] dark:text-[#9AA0AA] text-[14px] font-[500] leading-[21px] mt-[16px] w-full items-center gap-[4px]">
             Or Sign In With Wallet
             <svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" fill="currentColor" viewBox="0 0 12 12">
               <path d="M6.721 1.643a.5.5 0 00-.006.707L9.808 5.5H1a.5.5 0 000 1h8.808L6.715 9.65a.5.5 0 00.713.7l3.929-4a.5.5 0 000-.7l-3.929-4a.5.5 0 00-.707-.007z"></path>
