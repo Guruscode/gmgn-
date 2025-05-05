@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Pair } from "@/lib/tokenTypes";
 import Image from 'next/image';
-
+import { copyToClipboard, truncAddress } from '@/lib/utils';
 
 interface PairToken {
   tokenSymbol: string;
@@ -316,10 +316,10 @@ const TokenInfo: React.FC<TokenSnipersProps> = ({ token, pair, chainId }) => {
   return (
     <div 
       ref={containerRef}
-      className="h-full overflow-y-auto text-sm bg-[#0e0e10] text-white"
+      className=""
     >
       {/* Token Header */}
-      <div className="p-4 border-b border-[#1e1e24]">
+      <div className="p-4 border-b border-[#1c1cd3]">
         <div className="flex items-center mb-3">
         <Image
   src={
@@ -338,7 +338,10 @@ const TokenInfo: React.FC<TokenSnipersProps> = ({ token, pair, chainId }) => {
       "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iIzM0Mzk0NyIvPjwvc3ZnPg==";
   }}
 />
+
           <div>
+            
+            
             <div className="flex items-center">
               <h1 className="text-xl font-bold">
                 {tokenMetadata?.name }
@@ -663,6 +666,116 @@ const TokenInfo: React.FC<TokenSnipersProps> = ({ token, pair, chainId }) => {
               </div>
             </div>
           </div>
+
+          <div className="flex mt-3 w-full flex-col bg-accent-search rounded-[12px]">
+            <div className="bg-transparent rounded-[12px] inline-flex items-center flex-wrap gap-[0px] w-full">
+                <div className="flex flex-col bg-transparent w-[20%] flex-grow justify-center text-accent-aux-1 cursor-pointer text-[12px] items-center h-[54px] flex-nowrap rounded-tl-[12px] rounded-tr-0 border-b border-r border-accent-3">
+                    <div className="flex justify-center dark:text-[#9AA0AA] w-full">1m</div>
+                    <div className="text-[12px] flex dark:text-[9AA0AA]">
+                        <div className="flex text-accent-green w-full justify-center font-[500]">+0.87%</div>
+                    </div>
+                </div>
+                <div className="flex flex-col bg-transparent w-[20%] flex-grow justify-center text-accent-aux-1 cursor-pointer text-[12px] items-center h-[54px] flex-nowrap rounded-tl-[12px] rounded-tr-0 border-b border-r border-accent-3">
+                    <div className="flex justify-center dark:text-[#9AA0AA] w-full">5m</div>
+                    <div className="text-[12px] flex dark:text-[9AA0AA]">
+                        <div className="flex text-accent-green w-full justify-center font-[500]">+4.87%</div>
+                    </div>
+                </div>
+                <div className="flex flex-col bg-transparent w-[20%] flex-grow justify-center text-accent-aux-1 cursor-pointer text-[12px] items-center h-[54px] flex-nowrap rounded-tl-[12px] rounded-tr-0 border-b border-r border-accent-3">
+                    <div className="flex justify-center dark:text-[#9AA0AA] w-full">1h</div>
+                    <div className="text-[12px] flex dark:text-[9AA0AA]">
+                        <div className="flex text-accent-red w-full justify-center font-[500]">-12.87%</div>
+                    </div>
+                </div>
+                <div className="flex flex-col bg-transparent w-[20%] flex-grow justify-center text-accent-aux-1 cursor-pointer text-[12px] items-center h-[54px] flex-nowrap rounded-tl-[12px] rounded-tr-0 border-b  border-accent-3">
+                    <div className="flex justify-center dark:text-[#9AA0AA] w-full">24h</div>
+                    <div className="text-[12px] flex dark:text-[9AA0AA]">
+                        <div className="flex text-accent-green w-full justify-center font-[500]">+223.7%</div>
+                    </div>
+                </div>
+            </div>
+
+            {/* bottom side */}
+            <div className="flex justify-between pb-[8px] px-[12px] text-[12px] mt-[6px]">
+                <div className="flex flex-col gap-4">
+                    <div className="flex text-accent-aux-1 justify-start w-full">Vol</div>
+                    <div className="flex w-full justify-start font-[500]">$21.1K</div>
+                </div>
+
+                <div className="flex flex-col gap-4">
+                    <div className="flex text-accent-aux-1 justify-start w-full">Buys</div>
+                    <div className="flex w-full text-accent-green justify-start font-[500]">$21.1K</div>
+                </div>
+
+                <div className="flex flex-col gap-4">
+                    <div className="flex text-accent-aux-1 justify-start w-full">Sells</div>
+                    <div className="flex w-full text-accent-red justify-start font-[500]">$21.1K</div>
+                </div>
+
+                <div className="flex flex-col gap-4">
+                    <div className="flex text-accent-aux-1 justify-start w-full">Net Buy</div>
+                    <div className="flex w-full justify-start font-[500] text-accent-green">$21.1K</div>
+                </div>
+            </div>
+        </div>
+        <div className="flex mt-3 w-full flex-col bg-accent-search rounded-[12px] p-[12px]">
+            <div className="w-full flex justify-between items-center pb-2">
+                <h2 className='text-white text-[14px]'>Pool info</h2>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" fill="#9AA0AA" viewBox="0 0 20 20"><path fillRule="evenodd" clipRule="evenodd" d="M10 20c5.523 0 10-4.477 10-10S15.523 0 10 0 0 4.477 0 10s4.477 10 10 10zM6.465 5.501a.386.386 0 00-.266.11L4.39 7.42a.188.188 0 00.133.32h9.164c.101 0 .197-.04.266-.109l1.81-1.81a.188.188 0 00-.133-.32H6.465zm0 6.758a.376.376 0 00-.266.11l-1.81 1.81a.188.188 0 00.133.32h9.164c.101 0 .197-.04.266-.11l1.81-1.81a.188.188 0 00-.133-.32H6.465zm7.487-3.289a.376.376 0 00-.266-.11H4.522a.188.188 0 00-.133.321l1.81 1.81c.07.07.165.11.266.11h9.164a.188.188 0 00.133-.32l-1.81-1.81z"></path></svg>
+            </div>
+            <div className="w-full text-[12px] dark:text-[#9AA0AA] space-y-2">
+                <div className="flex w-full justify-between item-center ">
+                    <p className=''>Total liq</p>
+                    <p className='flex items-center'>
+                        $375k(807.12 SOL)
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" fill="#88D693" viewBox="0 0 12 12"><path d="M8.333 4.667h-.38v-.762A1.887 1.887 0 006.047 2a1.887 1.887 0 00-1.904 1.905v.762h-.381A.764.764 0 003 5.43v3.81c0 .418.343.761.762.761h4.571c.42 0 .762-.343.762-.761v-3.81a.764.764 0 00-.762-.762zM6.047 8.096a.765.765 0 01-.761-.762c0-.42.343-.763.761-.763.42 0 .763.344.763.763 0 .419-.343.762-.763.762zM7.23 4.667H4.867v-.762c0-.648.533-1.18 1.18-1.18.649 0 1.182.532 1.182 1.18v.762z"></path></svg>
+                    </p>
+                </div>
+                <div className="flex w-full justify-between item-center ">
+                    <p className=''>Market Cap</p>
+                    <p className='flex items-center'>
+                        $3M
+                    </p>
+                </div>
+                <div className="flex w-full justify-between item-center ">
+                    <p className=''>Holders</p>
+                    <p className='flex items-center'>
+                        9601
+                    </p>
+                </div>
+
+                <div className="flex w-full justify-between item-center ">
+                    <p className=''>Total supply</p>
+                    <p className='flex items-center'>
+                        {formatNumber(9996000)}
+                    </p>
+                </div>
+
+                <div className="flex w-full justify-between item-center ">
+                    <p className=''>Pair</p>
+                    <p className='flex items-center'>
+                        <span>{truncAddress("FAipEikduejyyr5Z")}</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="cursor-pointer" onClick={() => copyToClipboard("FAipEikduejyyr5Z")} width="12px" height="12px" fill="#5C6068" viewBox="0 0 12 12"><g clipPath="url(#clip0_6972_490)"><path d="M.5 5.214a2.357 2.357 0 012.357-2.357h3.929a2.357 2.357 0 012.357 2.357v3.929A2.357 2.357 0 016.786 11.5H2.857A2.357 2.357 0 01.5 9.143V5.214z"></path><path d="M2.987 2.084c.087-.008.174-.013.263-.013h3.929a2.75 2.75 0 012.75 2.75V8.75c0 .089-.005.177-.013.263A2.358 2.358 0 0011.5 6.786V2.857A2.357 2.357 0 009.143.5H5.214c-1.03 0-1.907.662-2.227 1.584z"></path></g><defs><clipPath id="clip0_6972_490"><rect width="12" height="12"></rect></clipPath></defs></svg>
+                    </p>
+                </div>
+
+                <div className="flex w-full justify-between item-center ">
+                    <p className=''>Token creator</p>
+                    <p className='flex items-center'>
+                        <span>{truncAddress("C4udFGorfjenrindfiU")}</span>
+                        <span>(2.5SOL)</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="cursor-pointer" onClick={() => copyToClipboard("FAipEikduejyyr5Z")} width="12px" height="12px" fill="#5C6068" viewBox="0 0 12 12"><g clipPath="url(#clip0_6972_490)"><path d="M.5 5.214a2.357 2.357 0 012.357-2.357h3.929a2.357 2.357 0 012.357 2.357v3.929A2.357 2.357 0 016.786 11.5H2.857A2.357 2.357 0 01.5 9.143V5.214z"></path><path d="M2.987 2.084c.087-.008.174-.013.263-.013h3.929a2.75 2.75 0 012.75 2.75V8.75c0 .089-.005.177-.013.263A2.358 2.358 0 0011.5 6.786V2.857A2.357 2.357 0 009.143.5H5.214c-1.03 0-1.907.662-2.227 1.584z"></path></g><defs><clipPath id="clip0_6972_490"><rect width="12" height="12"></rect></clipPath></defs></svg>
+                    </p>
+                </div>
+
+                <div className="flex w-full justify-between item-center ">
+                    <p className=''>Pool created</p>
+                    <p className='flex items-center'>
+                        01/22/2025 11:09
+                    </p>
+                </div>
+            </div>
+        </div>
         </div>
       </div>
     </div>

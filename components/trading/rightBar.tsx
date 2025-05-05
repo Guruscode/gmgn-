@@ -203,7 +203,7 @@ export default function RightBar() {
                 <BuySellAuto />
 
                 {/* metric */}
-                <Metric />
+                <Metric pair={null} chainId="solana" />
 
                 {/* pool Info */}
                 <PoolInfo />
@@ -242,7 +242,9 @@ export function TpslInput({ types }: { types: string }) {
 }
 
 export function BuySellAuto() {
-    const [tab, setTab] = useState("buy")
+    // const [pairStats, setPairStats] = useState(null);
+    const [tab, setTab] = useState("buy");
+    
     return (
         <div className="bg-accent-2 w-full p-[12px] mt-3">
             <div className='w-full min-h-[120px] rounded-[12px] relative'>
@@ -464,33 +466,33 @@ export function BuyNow({ setTpSlCheck, tpSlCheck }) {
                 </div>
             </div>
             {tpSlCheck ? <NotConnected /> :
-                <div className="relative h-auto space-y-2">
-                    {/* tpsl input */}
-                    <div className="flex flex-col items-center">
-                        <div className="">
-                            {/* list of tp-sl inputs */}
-                            <div className="flex gap-[5px] items-center">
-                                <TpslInput types='tp' />
-                                <TpslInput types='sell' />
-                                <button className="">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" fill="#9AA0AA" viewBox="0 0 20 20"><rect x="2" y="2" width="16" height="4" rx="1"></rect><rect x="7" y="1" width="6" height="4" rx="1"></rect><path fillRule="evenodd" clipRule="evenodd" d="M4 6h3.8a.8.8 0 00-.8.8v8.4a.8.8 0 001.6 0V6.8a.8.8 0 00-.8-.8h4.4a.8.8 0 00-.8.8v8.4a.8.8 0 001.6 0V6.8a.8.8 0 00-.8-.8H16v11a1 1 0 01-1 1H5a1 1 0 01-1-1V6z"></path></svg>
-                                </button>
-                            </div>
-                        </div>
-                        <button type="button" className="inline-flex min-w-[2.5rem] appearance-none items-center justify-center select-none relative border-[1px] border-accent-3 hover:border-accent-aux-1 mt-4 rounded-sm whitespace-nowrap leading-[1.2] font-[400] text-[12px] px-[.5rem] py-[.8rem] bg-transparent w-full gap-[4px]">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" clipRule="evenodd" d="M8 2a1 1 0 011 1v4h4a1 1 0 110 2H9v4a1 1 0 11-2 0V9H3a1 1 0 010-2h4V3a1 1 0 011-1z"></path></svg>
-                            Add
-                        </button>
-                    </div>
+                 <div className="relative h-auto space-y-2">
+                 {/* tpsl input */}
+                 <div className="flex flex-col items-center">
+                     <div className="">
+                         {/* list of tp-sl inputs */}
+                         <div className="flex gap-[5px] items-center">
+                             <TpslInput types='tp' />
+                             <TpslInput types='sell' />
+                             <button className="">
+                                 <svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" fill="#9AA0AA" viewBox="0 0 20 20"><rect x="2" y="2" width="16" height="4" rx="1"></rect><rect x="7" y="1" width="6" height="4" rx="1"></rect><path fillRule="evenodd" clipRule="evenodd" d="M4 6h3.8a.8.8 0 00-.8.8v8.4a.8.8 0 001.6 0V6.8a.8.8 0 00-.8-.8h4.4a.8.8 0 00-.8.8v8.4a.8.8 0 001.6 0V6.8a.8.8 0 00-.8-.8H16v11a1 1 0 01-1 1H5a1 1 0 01-1-1V6z"></path></svg>
+                             </button>
+                         </div>
+                     </div>
+                     <button type="button" className="inline-flex min-w-[2.5rem] appearance-none items-center justify-center select-none relative border-[1px] border-accent-3 hover:border-accent-aux-1 mt-4 rounded-sm whitespace-nowrap leading-[1.2] font-[400] text-[12px] px-[.5rem] py-[.8rem] bg-transparent w-full gap-[4px]">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" clipRule="evenodd" d="M8 2a1 1 0 011 1v4h4a1 1 0 110 2H9v4a1 1 0 11-2 0V9H3a1 1 0 010-2h4V3a1 1 0 011-1z"></path></svg>
+                         Add
+                     </button>
+                 </div>
 
-                    {/* button */}
-                    <div className='flex items-center gap-[4px]'>
-                        <div className="flex justify-center w-full">
-                            <button type="button" className="inline-flex w-full appearance-none items-center justify-center select-none relative whitespace-nowrap leading-[1.2] min-w-[2.5rem] px-[.7rem] py-[.7rem] dark:bg-[#393C43] dark:text-accent-aux-1 text-[14px] rounded-[8px] font-[500]">Buy</button>
-                        </div>
-                        <QuickSettingModal className={`w-auto h-auto`} />
-                    </div>
-                </div>
+                 {/* button */}
+                 <div className='flex items-center gap-[4px]'>
+                     <div className="flex justify-center w-full">
+                         <button type="button" className="inline-flex w-full appearance-none items-center justify-center select-none relative whitespace-nowrap leading-[1.2] min-w-[2.5rem] px-[.7rem] py-[.7rem] dark:bg-[#393C43] dark:text-accent-aux-1 text-[14px] rounded-[8px] font-[500]">Buy</button>
+                     </div>
+                     <QuickSettingModal className={`w-auto h-auto`} />
+                 </div>
+             </div>
             }
         </>
     )
@@ -656,62 +658,183 @@ export function NotConnected() {
     )
 }
 
-export function Metric() {
+
+interface Pair {
+    pairAddress: string;
+    exchangeName?: string;
+    pairLabel?: string;
+    liquidityUsd?: number;
+  }
+  
+  interface PairStats {
+    pricePercentChange?: { [key: string]: number };
+    totalVolume?: { [key: string]: number };
+    buyVolume?: { [key: string]: number };
+    sellVolume?: { [key: string]: number };
+  }
+  
+  interface MetricProps {
+    pair: Pair | null;
+    chainId: string;
+  }
+  
+  import  { useEffect } from "react";
+  export function Metric({ pair, chainId }: MetricProps) {
+    const [selectedTimeFrame, setSelectedTimeFrame] = useState("24h");
+    const [pairStats, setPairStats] = useState<PairStats | null>(null);
+  
+    // Fetch pair stats
+    useEffect(() => {
+      const fetchPairStats = async () => {
+        if (!pair || !pair.pairAddress) return;
+  
+        try {
+          let url;
+          const isSolana = chainId === "solana";
+  
+          if (isSolana) {
+            url = `https://solana-gateway.moralis.io/token/mainnet/pairs/${pair.pairAddress}/stats`;
+          } else {
+            url = `https://deep-index.moralis.io/api/v2.2/pairs/${pair.pairAddress}/stats?chain=${chainId}`;
+          }
+  
+          const response = await fetch(url, {
+            headers: {
+              accept: "application/json",
+              "X-API-Key": process.env.NEXT_PUBLIC_MORALIS_API_KEY || "",
+            },
+          });
+  
+          if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+          }
+  
+          const data = await response.json();
+          setPairStats(data);
+          // Set default selected timeframe to the first available timeframe
+          if (data.pricePercentChange) {
+            const availableTimeFrames = Object.keys(data.pricePercentChange);
+            setSelectedTimeFrame(availableTimeFrames[0] || "24h");
+          }
+        } catch (err) {
+          console.error("Error fetching pair stats:", err);
+        }
+      };
+  
+      fetchPairStats();
+    }, [pair, chainId]);
+  
+    // Get time period data from pairStats
+    const getTimePeriodData = (period: string) => {
+      if (!pairStats) {
+        return {
+          priceChange: 0,
+          totalVolume: 0,
+          buyVolume: 0,
+          sellVolume: 0,
+          netBuy: 0,
+        };
+      }
+  
+      const buyVolume = pairStats.buyVolume?.[period] || 0;
+      const sellVolume = pairStats.sellVolume?.[period] || 0;
+  
+      return {
+        priceChange: pairStats.pricePercentChange?.[period] || 0,
+        totalVolume: pairStats.totalVolume?.[period] || 0,
+        buyVolume,
+        sellVolume,
+        netBuy: buyVolume - sellVolume,
+      };
+    };
+  
+    // Format number for display
+    const formatNumber = (num: number) => {
+      if (num >= 1000000) return `$${(num / 1000000).toFixed(1)}M`;
+      if (num >= 1000) return `$${(num / 1000).toFixed(1)}K`;
+      return `$${num.toLocaleString()}`;
+    };
+  
+    // Get available timeframes from pairStats
+    const timeFrames = pairStats?.pricePercentChange
+      ? Object.keys(pairStats.pricePercentChange)
+      : [];
+  
     return (
-        <div className="flex mt-3 w-full flex-col bg-accent-search rounded-[12px]">
-            <div className="bg-transparent rounded-[12px] inline-flex items-center flex-wrap gap-[0px] w-full">
-                <div className="flex flex-col bg-transparent w-[20%] flex-grow justify-center text-accent-aux-1 cursor-pointer text-[12px] items-center h-[54px] flex-nowrap rounded-tl-[12px] rounded-tr-0 border-b border-r border-accent-3">
-                    <div className="flex justify-center dark:text-[#9AA0AA] w-full">1m</div>
-                    <div className="text-[12px] flex dark:text-[9AA0AA]">
-                        <div className="flex text-accent-green w-full justify-center font-[500]">+0.87%</div>
-                    </div>
+      <div className="flex mt-3 w-full flex-col bg-accent-search rounded-[12px]">
+        <div className="bg-transparent rounded-[12px] inline-flex items-center flex-wrap gap-[0px] w-full">
+          {timeFrames.map((timeFrame, index) => {
+            const { priceChange } = getTimePeriodData(timeFrame);
+            const isActive = selectedTimeFrame === timeFrame;
+            // Convert API timeframe to display format (e.g., "5min" to "5m")
+            const displayTimeFrame = timeFrame.replace("min", "m");
+            return (
+              <div
+                key={timeFrame}
+                className={`flex flex-col bg-transparent w-[${100 / timeFrames.length}%] flex-grow justify-center text-accent-aux-1 cursor-pointer text-[12px] items-center h-[54px] flex-nowrap ${
+                  index === 0 ? "rounded-tl-[12px]" : ""
+                } ${index === timeFrames.length - 1 ? "" : "border-r"} border-b border-accent-3 ${
+                  isActive ? "bg-accent-hover" : ""
+                }`}
+                onClick={() => setSelectedTimeFrame(timeFrame)}
+              >
+                <div className="flex justify-center dark:text-[#9AA0AA] w-full">
+                  {displayTimeFrame}
                 </div>
-                <div className="flex flex-col bg-transparent w-[20%] flex-grow justify-center text-accent-aux-1 cursor-pointer text-[12px] items-center h-[54px] flex-nowrap rounded-tl-[12px] rounded-tr-0 border-b border-r border-accent-3">
-                    <div className="flex justify-center dark:text-[#9AA0AA] w-full">5m</div>
-                    <div className="text-[12px] flex dark:text-[9AA0AA]">
-                        <div className="flex text-accent-green w-full justify-center font-[500]">+4.87%</div>
-                    </div>
+                <div className="text-[12px] flex dark:text-[#9AA0AA]">
+                  <div
+                    className={`flex w-full justify-center font-[500] ${
+                      priceChange >= 0 ? "text-accent-green" : "text-accent-red"
+                    }`}
+                  >
+                    {priceChange >= 0 ? "+" : ""}
+                    {priceChange.toFixed(2)}%
+                  </div>
                 </div>
-                <div className="flex flex-col bg-transparent w-[20%] flex-grow justify-center text-accent-aux-1 cursor-pointer text-[12px] items-center h-[54px] flex-nowrap rounded-tl-[12px] rounded-tr-0 border-b border-r border-accent-3">
-                    <div className="flex justify-center dark:text-[#9AA0AA] w-full">1h</div>
-                    <div className="text-[12px] flex dark:text-[9AA0AA]">
-                        <div className="flex text-accent-red w-full justify-center font-[500]">-12.87%</div>
-                    </div>
-                </div>
-                <div className="flex flex-col bg-transparent w-[20%] flex-grow justify-center text-accent-aux-1 cursor-pointer text-[12px] items-center h-[54px] flex-nowrap rounded-tl-[12px] rounded-tr-0 border-b  border-accent-3">
-                    <div className="flex justify-center dark:text-[#9AA0AA] w-full">24h</div>
-                    <div className="text-[12px] flex dark:text-[9AA0AA]">
-                        <div className="flex text-accent-green w-full justify-center font-[500]">+223.7%</div>
-                    </div>
-                </div>
-            </div>
-
-            {/* bottom side */}
-            <div className="flex justify-between pb-[8px] px-[12px] text-[12px] mt-[6px]">
-                <div className="flex flex-col gap-4">
-                    <div className="flex text-accent-aux-1 justify-start w-full">Vol</div>
-                    <div className="flex w-full justify-start font-[500]">$21.1K</div>
-                </div>
-
-                <div className="flex flex-col gap-4">
-                    <div className="flex text-accent-aux-1 justify-start w-full">Buys</div>
-                    <div className="flex w-full text-accent-green justify-start font-[500]">$21.1K</div>
-                </div>
-
-                <div className="flex flex-col gap-4">
-                    <div className="flex text-accent-aux-1 justify-start w-full">Sells</div>
-                    <div className="flex w-full text-accent-red justify-start font-[500]">$21.1K</div>
-                </div>
-
-                <div className="flex flex-col gap-4">
-                    <div className="flex text-accent-aux-1 justify-start w-full">Net Buy</div>
-                    <div className="flex w-full justify-start font-[500] text-accent-green">$21.1K</div>
-                </div>
-            </div>
+              </div>
+            );
+          })}
         </div>
-    )
-}
-
+  
+        {/* bottom side */}
+        <div className="flex justify-between pb-[8px] px-[12px] text-[12px] mt-[6px]">
+          <div className="flex flex-col gap-4">
+            <div className="flex text-accent-aux-1 justify-start w-full">Vol</div>
+            <div className="flex w-full justify-start font-[500]">
+              {formatNumber(getTimePeriodData(selectedTimeFrame).totalVolume)}
+            </div>
+          </div>
+  
+          <div className="flex flex-col gap-4">
+            <div className="flex text-accent-aux-1 justify-start w-full">Buys</div>
+            <div className="flex w-full text-accent-green justify-start font-[500]">
+              {formatNumber(getTimePeriodData(selectedTimeFrame).buyVolume)}
+            </div>
+          </div>
+  
+          <div className="flex flex-col gap-4">
+            <div className="flex text-accent-aux-1 justify-start w-full">Sells</div>
+            <div className="flex w-full text-accent-red justify-start font-[500]">
+              {formatNumber(getTimePeriodData(selectedTimeFrame).sellVolume)}
+            </div>
+          </div>
+  
+          <div className="flex flex-col gap-4">
+            <div className="flex text-accent-aux-1 justify-start w-full">Net Buy</div>
+            <div
+              className={`flex w-full justify-start font-[500] ${
+                getTimePeriodData(selectedTimeFrame).netBuy >= 0
+                  ? "text-accent-green"
+                  : "text-accent-red"
+              }`}
+            >
+              {formatNumber(Math.abs(getTimePeriodData(selectedTimeFrame).netBuy))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
 export function PoolInfo() {
     return (

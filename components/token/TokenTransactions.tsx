@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Pair } from "@/lib/tokenTypes";
+// import { Checkbox } from "@/components/ui/checkbox"
 import { formatPriceWithColor, getBaseTokenValue, formatValueWithColor } from '@/lib/utils';
 interface Token {
   symbol: string;
@@ -36,10 +37,10 @@ const TokenTransactions: React.FC<TokenTransactionsProps> = ({ pair, chainId }) 
   const [error, setError] = useState<string | null>(null);
   const [newTransactionIds, setNewTransactionIds] = useState<Set<string>>(new Set());
   const [, setPairData] = useState<PairData | null>(null);
-  const [tableHeight] = useState(400); // Default height
+  const [tableHeight] = useState(500); // Default height
   const pollInterval = useRef<NodeJS.Timeout | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
-  const resizeRef = useRef<HTMLDivElement>(null);
+  // const resizeRef = useRef<HTMLDivElement>(null);
 
 
   const blockExplorers: Record<string, string> = {
@@ -256,17 +257,87 @@ const TokenTransactions: React.FC<TokenTransactionsProps> = ({ pair, chainId }) 
           ref={tableRef}
           className="w-full text-sm text-left border-collapse"
         >
-          <thead className="text-xs uppercase bg-gray-800 sticky top-0 z-10">
-            <tr className="border-b border-gray-700">
-              <th className="px-4 py-3 whitespace-nowrap">Time</th>
-              <th className="px-4 py-3 whitespace-nowrap">Type</th>
-              <th className="px-4 py-3 text-right whitespace-nowrap">Total USD</th>
-              <th className="px-4 py-3 text-right whitespace-nowrap">Amount</th>
-              <th className="px-4 py-3 text-right whitespace-nowrap">Price</th>
-              <th className="px-4 py-3 whitespace-nowrap">Marker</th>
-              <th className="px-4 py-3 text-right whitespace-nowrap">Share</th>
-            </tr>
-          </thead>
+        <thead className="text-xs uppercase bg-[#17181b] sticky top-0 z-10">
+  <tr className="border-b border-accent-3 text-accent-aux-1">
+    {/* th 1 */}
+    <th className="py-[10px] px-[12px] w-[14.11%] text-left whitespace-nowrap dark:text-[f5f5f5]">
+      <div className="flex gap-[4px] items-center">
+        <div className="text-[12px]">Time</div>
+        <div className="scale-80">
+          <div className="flex cursor-pointer rotate-180 text-accent-aux-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor" viewBox="0 0 7 7">
+              <path d="M3.801 4.656a.4.4 0 01-.602 0L.58 1.663A.4.4 0 01.882 1h5.236a.4.4 0 01.302.663L3.8 4.656z"></path>
+            </svg>
+          </div>
+          <div className="flex cursor-pointer dark:text-[#f5f5f5]">
+            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor" viewBox="0 0 7 7">
+              <path d="M3.801 4.656a.4.4 0 01-.602 0L.58 1.663A.4.4 0 01.882 1h5.236a.4.4 0 01.302.663L3.8 4.656z"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </th>
+
+    {/* th 2 */}
+    <th className="py-[10px] px-[10.58px] w-[14%] text-left whitespace-nowrap dark:text-[f5f5f5]">
+      <div className="flex gap-[4px] items-center">
+        <div className="text-[12px]">Type</div>
+        <div className="flex cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" fill="#5C6068" viewBox="0 0 16 16">
+            <path d="M2.702 3.225l.006.006 3.635 3.547c.355.346.554.82.554 1.315v3.898a.6.6 0 11-1.2 0V8.093a.636.636 0 00-.192-.456L1.87 4.09C1.088 3.327 1.628 2 2.72 2h10.562c1.093 0 1.633 1.328.85 2.09l-3.64 3.547a.636.636 0 00-.191.456v5.634a.6.6 0 01-1.2 0V8.093c0-.495.2-.97.554-1.315l3.64-3.547.005-.006.001-.002-.002-.012a.03.03 0 00-.007-.01h-.002l-.008-.001H2.71a.03.03 0 00-.006.011.03.03 0 00-.003.012l.001.002z"></path>
+          </svg>
+        </div>
+      </div>
+    </th>
+
+    {/* th 3 */}
+    <th className="py-[10px] px-[12px] w-[14.11%] text-left whitespace-nowrap dark:text-[f5f5f5]">
+      <div className="flex gap-[4px] items-center">
+        <div className="text-[12px]">Total</div>
+        <div className="space-x-1 flex items-center text-[12px]">
+          <span>USD</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="12px" height="12px" fill="#5C6068" viewBox="0 0 16 16">
+            <g clipPath="url(#clip0_7009_491)">
+              <path d="M5.89 1.305a.5.5 0 01.371-.602 7.503 7.503 0 017.19 12.452.5.5 0 01-.816-.131l-1.087-2.312a.5.5 0 01.905-.425l.755 1.606A6.502 6.502 0 006.493 1.675a.5.5 0 01-.602-.37z"></path>
+            </g>
+          </svg>
+        </div>
+        <div className="flex cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" fill="#5C6068" viewBox="0 0 16 16">
+            <path d="M2.702 3.225l.006.006 3.635 3.547c.355.346.554.82.554 1.315v3.898a.6.6 0 11-1.2 0V8.093a.636.636 0 00-.192-.456L1.87 4.09C1.088 3.327 1.628 2 2.72 2h10.562c1.093 0 1.633 1.328.85 2.09l-3.64 3.547a.636.636 0 00-.191.456v5.634a.6.6 0 01-1.2 0V8.093c0-.495.2-.97.554-1.315l3.64-3.547.005-.006.001-.002-.002-.012a.03.03 0 00-.007-.01h-.002l-.008-.001H2.71a.03.03 0 00-.006.011.03.03 0 00-.003.012l.001.002z"></path>
+          </svg>
+        </div>
+      </div>
+    </th>
+
+    {/* th 4 */}
+    <th className="py-[10px] px-[12px] w-[10.58%] text-left whitespace-nowrap dark:text-[f5f5f5]">
+      <div className="text-[12px]">Amount</div>
+    </th>
+
+    {/* th 5 */}
+    <th className="py-[10px] px-[12px] w-[11.76%] text-left whitespace-nowrap dark:text-[f5f5f5]">
+      <div className="text-[12px]">Price</div>
+      <svg xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" fill="#5C6068" viewBox="0 0 16 16">
+        <path d="M9.37 1.846a.6.6 0 01.654.13l4 4a.6.6 0 01-.848.848L10.2 7.616a.6.6 0 01-.848-.848l3.474-3.474a.6.6 0 01.492-.195z"></path>
+      </svg>
+    </th>
+
+    <th className="py-[10px] px-[12px] w-[11.76%] text-left whitespace-nowrap dark:text-[f5f5f5]">
+      <div className="text-[12px]">Price</div>
+      <svg xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" fill="#5C6068" viewBox="0 0 16 16">
+        <path d="M9.37 1.846a.6.6 0 01.654.13l4 4a.6.6 0 01-.848.848L10.2 7.616a.6.6 0 01-.848-.848l3.474-3.474a.6.6 0 01.492-.195z"></path>
+      </svg>
+    </th>
+    <th className="py-[10px] px-[12px] w-[11.76%] text-left whitespace-nowrap dark:text-[f5f5f5]">
+      <div className="text-[12px]">Price</div>
+      <svg xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" fill="#5C6068" viewBox="0 0 16 16">
+        <path d="M9.37 1.846a.6.6 0 01.654.13l4 4a.6.6 0 01-.848.848L10.2 7.616a.6.6 0 01-.848-.848l3.474-3.474a.6.6 0 01.492-.195z"></path>
+      </svg>
+    </th>
+  </tr>
+</thead>
+
           <tbody>
             {transactions.map((tx, index) => {
     
@@ -286,7 +357,7 @@ const TokenTransactions: React.FC<TokenTransactionsProps> = ({ pair, chainId }) 
               return (
                 <tr
                   key={uniqueKey}
-                  className={`border-b border-gray-800 hover:bg-gray-800/50 ${
+                  className={`border-b border-gray-800  ${
                     isNew ? "animate-fade-in bg-accent-2" : ""
                   }`}
                 >
@@ -329,20 +400,14 @@ const TokenTransactions: React.FC<TokenTransactionsProps> = ({ pair, chainId }) 
                       href="#"
                       className="inline-block text-gray-400 hover:text-blue-400"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                        />
-                      </svg>
+                     <div className="flex py-[10px] items-center w-[15.29%] whitespace-nowrap dark:text-[f5f5f5]">
+                                    <div className="flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" clipRule="evenodd" d="M4 6a2 2 0 012-2h2a1 1 0 000-2H6a4 4 0 00-4 4v8a4 4 0 004 4h8a4 4 0 004-4v-2a1 1 0 10-2 0v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm7-3a1 1 0 011-1h4a2 2 0 012 2v4a1 1 0 11-2 0V5.414l-5.293 5.293a1 1 0 01-1.414-1.414L14.586 4H12a1 1 0 01-1-1z"></path></svg>
+                                        <div className="flex text-[12px] ml-[0.1rem]">Share</div>
+                                    </div>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12px" height="12px" fill="#9AA0AA" viewBox="0 0 16 16"><path fillRule="evenodd" clipRule="evenodd" d="M2.702 3.225l.006.006 3.635 3.547c.355.346.554.82.554 1.315v3.898a.6.6 0 11-1.2 0V8.093a.636.636 0 00-.192-.456L1.87 4.09C1.088 3.327 1.628 2 2.72 2h10.562c1.093 0 1.633 1.328.85 2.09l-3.64 3.547a.636.636 0 00-.191.456v5.634a.6.6 0 01-1.2 0V8.093c0-.495.2-.97.554-1.315l3.64-3.547.005-.006.001-.002-.002-.012a.03.03 0 00-.007-.01h-.002l-.008-.001H2.71a.03.03 0 00-.006.011.03.03 0 00-.003.012l.001.002z"></path></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12px" height="12px" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" clipRule="evenodd" d="M10 20c5.523 0 10-4.477 10-10S15.523 0 10 0 0 4.477 0 10s4.477 10 10 10zM6.465 5.501a.386.386 0 00-.266.11L4.39 7.42a.188.188 0 00.133.32h9.164c.101 0 .197-.04.266-.109l1.81-1.81a.188.188 0 00-.133-.32H6.465zm0 6.758a.376.376 0 00-.266.11l-1.81 1.81a.188.188 0 00.133.32h9.164c.101 0 .197-.04.266-.11l1.81-1.81a.188.188 0 00-.133-.32H6.465zm7.487-3.289a.376.376 0 00-.266-.11H4.522a.188.188 0 00-.133.321l1.81 1.81c.07.07.165.11.266.11h9.164a.188.188 0 00.133-.32l-1.81-1.81z"></path></svg>
+                                </div>
                     </a>
                   </td>
                 </tr>
@@ -353,12 +418,12 @@ const TokenTransactions: React.FC<TokenTransactionsProps> = ({ pair, chainId }) 
       </div>
 
       {/* Resize handle */}
-      <div
+      {/* <div
         ref={resizeRef}
         className="h-2 bg-gray-800 hover:bg-blue-500 cursor-ns-resize flex items-center justify-center"
       >
         <div className="w-10 h-1 bg-gray-600 rounded-full"></div>
-      </div>
+      </div> */}
     </div>
   );
 };
