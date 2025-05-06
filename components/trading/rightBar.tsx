@@ -2,11 +2,37 @@
 import React, { useState } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip'
 import Image from 'next/image'
+import { useParams } from "next/navigation";
 import QuickSettingModal from '../common/quickSettingModal';
 import { Switch } from '../ui/switch';
 import { copyToClipboard, formatNumber, truncAddress } from '@/lib/utils';
 
 export default function RightBar() {
+      const params = useParams();
+    const chainPath = params.chain;
+      const [selectedPair] = useState<Pair | null>(null);
+   
+
+      const PATH_TO_CHAIN_ID: Record<string, string> = {
+        ethereum: "0x1",
+        binance: "0x38",
+        bsc: "0x38",
+        polygon: "0x89",
+        solana: "solana",
+        arbitrum: "0xa4b1",
+        base: "0x2105",
+        avalanche: "0xa86a",
+        optimism: "0xa",
+        linea: "0xe708",
+        fantom: "0xfa",
+        pulse: "0x171",
+        ronin: "0x7e4",
+      };
+      
+  const getApiChainId = (chainPath?: string): string => {
+    return PATH_TO_CHAIN_ID[chainPath ?? ""] || chainPath || "";
+  };
+      const chainId = getApiChainId(Array.isArray(chainPath) ? chainPath[0] : chainPath);
     return (
         <div className="w-[300px] rounded-tl-[12px]  h-[calc(100vh-160px)] overflow-y-auto rounded-tr-[12px]">
             <div className='flex flex-col w-full rounded-[12px] overflow-hidden'>
@@ -206,7 +232,7 @@ export default function RightBar() {
                 <Metric pair={null} chainId="solana" />
 
                 {/* pool Info */}
-                <PoolInfo />
+                <PoolInfo pairAddress={selectedPair?.pairAddress || ""} chainId={chainId} />
 
                 {/* degen audit */}
                 <DegenAudit />
@@ -836,69 +862,217 @@ interface Pair {
     );
   }
 
-export function PoolInfo() {
-    return (
+  interface PoolInfoData {
+    totalLiquidityUsd: number;
+    totalLiquiditySol: number;
+    marketCap: number;
+    holders: number;
+    totalSupply: number;
+    pairAddress: string;
+    tokenCreator: string;
+    tokenCreatorBalance: number;
+    poolCreated: string;
+  }
+  
+  interface PoolInfoProps {
+    pairAddress?: string;
+    chainId: string;
+  }
+
+  export function PoolInfo({ pairAddress, chainId }: PoolInfoProps) {
+    const [poolInfo, setPoolInfo] = useState<PoolInfoData | null>(null);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
+  
+    useEffect(() => {
+      const fetchPoolInfo = async () => {
+        if (!pairAddress) {
+          setError('No pair address provided');
+          return;
+        }
+  
+        setLoading(true);
+        setError(null);
+  
+        try {
+          let url: string;
+          const isSolana = chainId === 'solana';
+  
+          // Use the same API endpoints as TokenPage
+          if (isSolana) {
+            url = `https://solana-gateway.moralis.io/token/mainnet/${pairAddress}/pairs`;
+          } else {
+            url = `https://deep-index.moralis.io/api/v2.2/erc20/${pairAddress}/pairs?chain=${chainId}`;
+          }
+  
+          const response = await fetch(url, {
+            headers: {
+              accept: 'application/json',
+              'X-API-Key': process.env.NEXT_PUBLIC_MORALIS_API_KEY || '',
+            },
+          });
+  
+          if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+          }
+  
+          const data = await response.json();
+          const pairData = data.pairs?.find((pair: Pair) => pair.pairAddress === pairAddress) || data;
+
+          // Normalize the API response
+          const normalizedData: PoolInfoData = {
+            totalLiquidityUsd: pairData.liquidityUsd || 0,
+            totalLiquiditySol: pairData.liquiditySol || 0, // Adjust based on actual API response
+            marketCap: pairData.marketCap || 0, // Adjust based on actual API response
+            holders: pairData.holders || 0, // Adjust based on actual API response
+            totalSupply: pairData.totalSupply || 0, // Adjust based on actual API response
+            pairAddress: pairData.pairAddress || pairAddress,
+            tokenCreator: pairData.tokenCreator || '', // Adjust based on actual API response
+            tokenCreatorBalance: pairData.tokenCreatorBalance || 0, // Adjust based on actual API response
+            poolCreated: pairData.poolCreated || '', // Adjust based on actual API response
+          };
+  
+          setPoolInfo(normalizedData);
+        } catch (err: unknown) {
+          if (err instanceof Error) {
+            console.error('Error fetching pool info:', err);
+            setError(`Error loading pool data: ${err.message}`);
+          } else {
+            console.error('Unknown error fetching pool info:', err);
+            setError('An unknown error occurred while loading pool data.');
+          }
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      fetchPoolInfo();
+    }, [pairAddress, chainId]);
+  
+    if (loading) {
+      return (
         <div className="flex mt-3 w-full flex-col bg-accent-search rounded-[12px] p-[12px]">
-            <div className="w-full flex justify-between items-center pb-2">
-                <h2 className='text-white text-[14px]'>Pool info</h2>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" fill="#9AA0AA" viewBox="0 0 20 20"><path fillRule="evenodd" clipRule="evenodd" d="M10 20c5.523 0 10-4.477 10-10S15.523 0 10 0 0 4.477 0 10s4.477 10 10 10zM6.465 5.501a.386.386 0 00-.266.11L4.39 7.42a.188.188 0 00.133.32h9.164c.101 0 .197-.04.266-.109l1.81-1.81a.188.188 0 00-.133-.32H6.465zm0 6.758a.376.376 0 00-.266.11l-1.81 1.81a.188.188 0 00.133.32h9.164c.101 0 .197-.04.266-.11l1.81-1.81a.188.188 0 00-.133-.32H6.465zm7.487-3.289a.376.376 0 00-.266-.11H4.522a.188.188 0 00-.133.321l1.81 1.81c.07.07.165.11.266.11h9.164a.188.188 0 00.133-.32l-1.81-1.81z"></path></svg>
-            </div>
-            <div className="w-full text-[12px] dark:text-[#9AA0AA] space-y-2">
-                <div className="flex w-full justify-between item-center ">
-                    <p className=''>Total liq</p>
-                    <p className='flex items-center'>
-                        $375k(807.12 SOL)
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" fill="#88D693" viewBox="0 0 12 12"><path d="M8.333 4.667h-.38v-.762A1.887 1.887 0 006.047 2a1.887 1.887 0 00-1.904 1.905v.762h-.381A.764.764 0 003 5.43v3.81c0 .418.343.761.762.761h4.571c.42 0 .762-.343.762-.761v-3.81a.764.764 0 00-.762-.762zM6.047 8.096a.765.765 0 01-.761-.762c0-.42.343-.763.761-.763.42 0 .763.344.763.763 0 .419-.343.762-.763.762zM7.23 4.667H4.867v-.762c0-.648.533-1.18 1.18-1.18.649 0 1.182.532 1.182 1.18v.762z"></path></svg>
-                    </p>
-                </div>
-                <div className="flex w-full justify-between item-center ">
-                    <p className=''>Market Cap</p>
-                    <p className='flex items-center'>
-                        $3M
-                    </p>
-                </div>
-                <div className="flex w-full justify-between item-center ">
-                    <p className=''>Holders</p>
-                    <p className='flex items-center'>
-                        9601
-                    </p>
-                </div>
-
-                <div className="flex w-full justify-between item-center ">
-                    <p className=''>Total supply</p>
-                    <p className='flex items-center'>
-                        {formatNumber(9996000)}
-                    </p>
-                </div>
-
-                <div className="flex w-full justify-between item-center ">
-                    <p className=''>Pair</p>
-                    <p className='flex items-center'>
-                        <span>{truncAddress("FAipEikduejyyr5Z")}</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="cursor-pointer" onClick={() => copyToClipboard("FAipEikduejyyr5Z")} width="12px" height="12px" fill="#5C6068" viewBox="0 0 12 12"><g clipPath="url(#clip0_6972_490)"><path d="M.5 5.214a2.357 2.357 0 012.357-2.357h3.929a2.357 2.357 0 012.357 2.357v3.929A2.357 2.357 0 016.786 11.5H2.857A2.357 2.357 0 01.5 9.143V5.214z"></path><path d="M2.987 2.084c.087-.008.174-.013.263-.013h3.929a2.75 2.75 0 012.75 2.75V8.75c0 .089-.005.177-.013.263A2.358 2.358 0 0011.5 6.786V2.857A2.357 2.357 0 009.143.5H5.214c-1.03 0-1.907.662-2.227 1.584z"></path></g><defs><clipPath id="clip0_6972_490"><rect width="12" height="12"></rect></clipPath></defs></svg>
-                    </p>
-                </div>
-
-                <div className="flex w-full justify-between item-center ">
-                    <p className=''>Token creator</p>
-                    <p className='flex items-center'>
-                        <span>{truncAddress("C4udFGorfjenrindfiU")}</span>
-                        <span>(2.5SOL)</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="cursor-pointer" onClick={() => copyToClipboard("FAipEikduejyyr5Z")} width="12px" height="12px" fill="#5C6068" viewBox="0 0 12 12"><g clipPath="url(#clip0_6972_490)"><path d="M.5 5.214a2.357 2.357 0 012.357-2.357h3.929a2.357 2.357 0 012.357 2.357v3.929A2.357 2.357 0 016.786 11.5H2.857A2.357 2.357 0 01.5 9.143V5.214z"></path><path d="M2.987 2.084c.087-.008.174-.013.263-.013h3.929a2.75 2.75 0 012.75 2.75V8.75c0 .089-.005.177-.013.263A2.358 2.358 0 0011.5 6.786V2.857A2.357 2.357 0 009.143.5H5.214c-1.03 0-1.907.662-2.227 1.584z"></path></g><defs><clipPath id="clip0_6972_490"><rect width="12" height="12"></rect></clipPath></defs></svg>
-                    </p>
-                </div>
-
-                <div className="flex w-full justify-between item-center ">
-                    <p className=''>Pool created</p>
-                    <p className='flex items-center'>
-                        01/22/2025 11:09
-                    </p>
-                </div>
-            </div>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-dex-blue mx-auto mb-2"></div>
+            <p className="text-[12px] dark:text-[#9AA0AA]">Loading pool info...</p>
+          </div>
         </div>
-    )
-}
-
+      );
+    }
+  
+    if (error || !poolInfo) {
+      return (
+        <div className="flex mt-3 w-full flex-col bg-accent-search rounded-[12px] p-[12px]">
+          <p className="text-[12px] dark:text-[#9AA0AA]">{error || 'No pool information available'}</p>
+        </div>
+      );
+    }
+  
+    return (
+      <div className="flex mt-3 w-full flex-col bg-accent-search rounded-[12px] p-[12px]">
+        <div className="w-full flex justify-between items-center pb-2">
+          <h2 className="text-white text-[14px]">Pool info</h2>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16px"
+            height="16px"
+            fill="#9AA0AA"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              clipRule="evenodd"
+              d="M10 20c5.523 0 10-4.477 10-10S15.523 0 10 0 0 4.477 0 10s4.477 10 10 10zM6.465 5.501a.386.386 0 00-.266.11L4.39 7.42a.188.188 0 00.133.32h9.164c.101 0 .197-.04.266-.109l1.81-1.81a.188.188 0 00-.133-.32H6.465zm0 6.758a.376.376 0 00-.266.11l-1.81 1.81a.188.188 0 00.133.32h9.164c.101 0 .197-.04.266-.11l1.81-1.81a.188.188 0 00-.133-.32H6.465zm7.487-3.289a.376.376 0 00-.266-.11H4.522a.188.188 0 00-.133.321l1.81 1.81c.07.07.165.11.266.11h9.164a.188.188 0 00.133-.32l-1.81-1.81z"
+            ></path>
+          </svg>
+        </div>
+        <div className="w-full text-[12px] dark:text-[#9AA0AA] space-y-2">
+          <div className="flex w-full justify-between item-center">
+            <p>Total liq</p>
+            <p className="flex items-center">
+              ${formatNumber(poolInfo.totalLiquidityUsd)} ({poolInfo.totalLiquiditySol.toFixed(2)} SOL)
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16px"
+                height="16px"
+                fill="#88D693"
+                viewBox="0 0 12 12"
+              >
+                <path d="M8.333 4.667h-.38v-.762A1.887 1.887 0 006.047 2a1.887 1.887 0 00-1.904 1.905v.762h-.381A.764.764 0 003 5.43v3.81c0 .418.343.761.762.761h4.571c.42 0 .762-.343.762-.761v-3.81a.764.764 0 00-.762-.762zM6.047 8.096a.765.765 0 01-.761-.762c0-.42.343-.763.761-.763.42 0 .763.344.763.763 0 .419-.343.762-.763.762zM7.23 4.667H4.867v-.762c0-.648.533-1.18 1.18-1.18.649 0 1.182.532 1.182 1.18v.762z"></path>
+              </svg>
+            </p>
+          </div>
+          <div className="flex w-full justify-between item-center">
+            <p>Market Cap</p>
+            <p className="flex items-center">${formatNumber(poolInfo.marketCap)}</p>
+          </div>
+          <div className="flex w-full justify-between item-center">
+            <p>Holders</p>
+            <p className="flex items-center">{poolInfo.holders}</p>
+          </div>
+          <div className="flex w-full justify-between item-center">
+            <p>Total supply</p>
+            <p className="flex items-center">{formatNumber(poolInfo.totalSupply)}</p>
+          </div>
+          <div className="flex w-full justify-between item-center">
+            <p>Pair</p>
+            <p className="flex items-center">
+              <span>{truncAddress(poolInfo.pairAddress)}</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="cursor-pointer"
+                onClick={() => copyToClipboard(poolInfo.pairAddress)}
+                width="12px"
+                height="12px"
+                fill="#5C6068"
+                viewBox="0 0 12 12"
+              >
+                <g clipPath="url(#clip0_6972_490)">
+                  <path d="M.5 5.214a2.357 2.357 0 012.357-2.357h3.929a2.357 2.357 0 012.357 2.357v3.929A2.357 2.357 0 016.786 11.5H2.857A2.357 2.357 0 01.5 9.143V5.214z"></path>
+                  <path d="M2.987 2.084c.087-.008.174-.013.263-.013h3.929a2.75 2.75 0 012.75 2.75V8.75c0 .089-.005.177-.013.263A2.358 2.358 0 0011.5 6.786V2.857A2.357 2.357 0 009.143.5H5.214c-1.03 0-1.907.662-2.227 1.584z"></path>
+                </g>
+                <defs>
+                  <clipPath id="clip0_6972_490">
+                    <rect width="12" height="12"></rect>
+                  </clipPath>
+                </defs>
+              </svg>
+            </p>
+          </div>
+          <div className="flex w-full justify-between item-center">
+            <p>Token creator</p>
+            <p className="flex items-center">
+              <span>{truncAddress(poolInfo.tokenCreator)}</span>
+              <span>({poolInfo.tokenCreatorBalance.toFixed(1)} SOL)</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="cursor-pointer"
+                onClick={() => copyToClipboard(poolInfo.tokenCreator)}
+                width="12px"
+                height="12px"
+                fill="#5C6068"
+                viewBox="0 0 12 12"
+              >
+                <g clipPath="url(#clip0_6972_490)">
+                  <path d="M.5 5.214a2.357 2.357 0 012.357-2.357h3.929a2.357 2.357 0 012.357 2.357v3.929A2.357 2.357 0 016.786 11.5H2.857A2.357 2.357 0 01.5 9.143V5.214z"></path>
+                  <path d="M2.987 2.084c.087-.008.174-.013.263-.013h3.929a2.75 2.75 0 012.75 2.75V8.75c0 .089-.005.177-.013.263A2.358 2.358 0 0011.5 6.786V2.857A2.357 2.357 0 009.143.5H5.214c-1.03 0-1.907.662-2.227 1.584z"></path>
+                </g>
+                <defs>
+                  <clipPath id="clip0_6972_490">
+                    <rect width="12" height="12"></rect>
+                  </clipPath>
+                </defs>
+              </svg>
+            </p>
+          </div>
+          <div className="flex w-full justify-between item-center">
+            <p>Pool created</p>
+            <p className="flex items-center">{poolInfo.poolCreated}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
 export function DegenAudit() {
     return (

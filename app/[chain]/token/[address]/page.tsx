@@ -10,7 +10,7 @@ import TokenHolders from "@/components/token/TokenHolders";
 import TokenSnipers from "@/components/token/TokenSnipers";
 import TokenHolderInsights from "@/components/token/TokenHolderInsights";
 import Drawer from '@/components/common/drawer';
-import MobileTradingHeader from '@/components/trading/mobileTrading';
+// import MobileTradingHeader from '@/components/trading/mobileTrading';
 // import TradingHeader from '@/components/trading/trading';
 import { BuyTab, DegenAudit, PoolInfo, SellTab } from '@/components/trading/rightBar';
 
@@ -255,7 +255,8 @@ const TokenPage: React.FC = () => {
       </div>
 
       <div className="md:hidden block">
-        <MobileTradingHeader />
+        
+        {/* <MobileTradingHeader /> */}
         <div className="flex flex-col h-full bg-dark:bg-[#111111]">
           <div className="flex-1 p-4">
             {/* <TokenChart pair={selectedPair} timeFrame={timeFrame} onTimeFrameChange={handleTimeFrameChange} /> */}
@@ -269,7 +270,7 @@ const TokenPage: React.FC = () => {
             <TokenInfo token={tokenInfo} pair={selectedPair} timeFrame={timeFrame} chainId={chainId} />
           </div> */}
           <div className="border-t border-dex-border">
-          {/* <TokenChart pair={selectedPair} timeFrame={timeFrame} onTimeFrameChange={handleTimeFrameChange} /> */}
+          <TokenChart pair={selectedPair} timeFrame={timeFrame} onTimeFrameChange={handleTimeFrameChange} />
             <TokenTabs  />
             
           </div>
@@ -317,7 +318,7 @@ const TokenPage: React.FC = () => {
           <Drawer isOpen={isOpen.info} onClose={() => setIsOpen((prev) => ({ ...prev, info: false }))}>
             <>
             
-              <PoolInfo />
+            <PoolInfo pairAddress={selectedPair?.pairAddress} chainId={chainId} />
               <DegenAudit />
             </>
           </Drawer>
