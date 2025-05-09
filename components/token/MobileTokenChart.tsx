@@ -1,6 +1,6 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { Pair } from "@/lib/tokenTypes";
+import Image from "next/image";
 
 interface TokenChartProps {
   pair: Pair | null;
@@ -53,10 +53,9 @@ const MobileTokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame }) => {
 
   useEffect(() => {
     if (!pair) return;
-  
+
     const loadScript = () => {
       if (document.getElementById("moralis-chart-widget")) {
-        // Poll until the widget function is available
         const interval = setInterval(() => {
           if (typeof window.createMyWidget === "function") {
             clearInterval(interval);
@@ -65,14 +64,13 @@ const MobileTokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame }) => {
         }, 200);
         return;
       }
-  
+
       const script = document.createElement("script");
       script.id = "moralis-chart-widget";
       script.src = "https://moralis.com/static/embed/chart.js";
       script.async = true;
-  
+
       script.onload = () => {
-        // Poll until the widget function is available
         const interval = setInterval(() => {
           if (typeof window.createMyWidget === "function") {
             clearInterval(interval);
@@ -80,25 +78,63 @@ const MobileTokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame }) => {
           }
         }, 200);
       };
-  
+
       script.onerror = () => console.error("Script load failed");
       document.body.appendChild(script);
     };
-  
+
     cleanup();
     loadScript();
-  
+
     return cleanup;
   }, [pair, timeFrame]);
-  
+
+  if (!pair) return null;
 
   return (
-    <div
-      id={PRICE_CHART_ID}
-      ref={containerRef}
-      className="bg-dex-bg-secondary rounded-lg w-full"
-      style={{ height: "280px", minHeight: "280px", overflow: "hidden" }}
-    />
+    <div className="flex flex-col gap-2">
+      {/* Pair Info Header (Mobile View) */}
+      <div className="flex flex-col justify-start items-start text-sm text-dex-text-secondary">
+        <div className="flex items-center mb-2">
+          <Image
+            src={pair.exchangeLogo || "/images/exchanges/default-exchange.svg"}
+            alt={pair.exchangeName}
+            width={24}
+            height={24}
+            className="mr-2 rounded-full"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.onerror = null;
+              target.src =
+                "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzM0Mzk0NyIvPjwvc3ZnPg==";
+            }}
+          />
+          <span className="font-medium text-dex-text-primary">
+            {pair.pairLabel}
+          </span>
+          <span className="ml-2 text-dex-text-secondary">
+            on {pair.exchangeName}
+          </span>
+        </div>
+        <div>
+          <span className="mr-2">
+            Volume: ${(pair.volume24hrUsd || 0).toLocaleString()}
+          </span>
+          <span className="mx-2">|</span>
+          <span>
+            Liquidity: ${(pair.liquidityUsd || 0).toLocaleString()}
+          </span>
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div
+        id={PRICE_CHART_ID}
+        ref={containerRef}
+        className="bg-dex-bg-secondary rounded-lg w-full"
+        style={{ height: "280px", minHeight: "280px", overflow: "hidden" }}
+      />
+    </div>
   );
 };
 
