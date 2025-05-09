@@ -1,12 +1,10 @@
 "use client";
-
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import AuthLayout from "../components/common/authLayout";
 import Header from "../components/common/header";
 import MemeCoinsWidget from "@/components/common/widget";
 import { Suspense } from "react";
-
 import '@rainbow-me/rainbowkit/styles.css';
 import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
@@ -37,18 +35,20 @@ export default function RootLayout({
         <WagmiProvider config={config}>
           <QueryClientProvider client={queryClient}>
             <RainbowKitProvider>
-              {/* Separate Suspense boundaries for better loading control */}
               <Suspense fallback={<div className="flex-1 flex items-center justify-center">Loading...</div>}>
                 <AuthLayout />
               </Suspense>
-              
               <div className="flex flex-col flex-1">
-                <Header />
+                <Suspense fallback={<div className="h-[56px] flex items-center justify-center">Loading header...</div>}>
+                  <Header />
+                </Suspense>
                 <Suspense fallback={null}>
                   <MemeCoinsWidget />
                 </Suspense>
                 <main className="flex-1">
-                  {children}
+                  <Suspense fallback={<div className="flex-1 flex items-center justify-center">Loading page...</div>}>
+                    {children}
+                  </Suspense>
                 </main>
               </div>
             </RainbowKitProvider>

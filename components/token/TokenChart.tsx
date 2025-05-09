@@ -52,7 +52,7 @@ const TokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame }) => {
     };
 
     const loadWidget = () => {
-      if (typeof window.createMyWidget === "function") {
+      if (typeof window.createMyWidget === "function" && containerRef.current && isMobile !== null) {
         const chartChainId = getChartChainId();
         console.log(`Initializing widget (mobile: ${isMobile}) with pair:`, pair.pairAddress);
         
@@ -228,7 +228,7 @@ const TokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame }) => {
         id={PRICE_CHART_ID}
         ref={containerRef}
         className="bg-dex-bg-secondary rounded-lg w-full"
-        style={{ height: typeof window !== 'undefined' && window.innerWidth <= 768 ? '400px' : '70vh' }}
+        style={{ height: isMobile ? '400px' : '70vh' }}
       />
     </div>
   );
