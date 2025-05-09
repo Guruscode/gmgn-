@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import TokenChart from "@/components/token/TokenChart";
+import MobileTokenChart from "@/components/token/MobileTokenChart";
 import TokenInfo from "@/components/token/TokenInfo";
 import TokenTabs from "@/components/token/TokenTabs";
 import PairSelector from "@/components/token/PairSelector";
@@ -270,8 +271,8 @@ const TokenPage: React.FC = () => {
             <TokenInfo token={tokenInfo} pair={selectedPair} timeFrame={timeFrame} chainId={chainId} />
           </div> */}
        <div className="border-t border-dex-border">
-          <div className="min-h-[400px] w-full">
-            <TokenChart pair={selectedPair} timeFrame={timeFrame} onTimeFrameChange={handleTimeFrameChange} />
+          <div className="min-h-[300px] w-full">
+            <MobileTokenChart pair={selectedPair} timeFrame={timeFrame}  />
           </div>
           <TokenTabs />
         </div>

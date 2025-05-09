@@ -19,24 +19,81 @@ const PRICE_CHART_ID = "price-chart-widget-container";
 
 const TokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isMobile, setIsMobile] = useState(false);
-  const [, setWidgetLoaded] = useState(false);
+  const [, setIsMobile] = useState(false);
+  const [widgetLoaded, setWidgetLoaded] = useState(false);
+  const [containerHeight, setContainerHeight] = useState('400px'); // Default fixed height
 
   // Track mobile state and handle resize
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
+   // Replace this in your checkMobile function:
+     // Replace your mobile height calculation with:
+        const checkMobile = () => {
+          const mobile = window.innerWidth <= 768;
+          setIsMobile(mobile);
+          // Set fixed height that matches the screenshot
+          setContainerHeight(mobile ? '280px' : '400px');
+        };
+    
+    // Initial check
+    checkMobile();
+    
+    // Add event listener
+    window.addEventListener('resize', checkMobile);
+    
+    // Force chart redraw on resize to ensure proper rendering
+    const handleResize = () => {
+      if (widgetLoaded && pair) {
+        reinitializeWidget();
+      }
     };
     
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+    const resizeDebounce = debounce(handleResize, 250);
+    window.addEventListener('resize', resizeDebounce);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('resize', resizeDebounce);
+    };
+  }, [pair, widgetLoaded]);
 
-  useEffect(() => {
-    if (!pair || !pair.pairAddress || typeof window === "undefined") return;
+  // Debounce function to prevent excessive widget reinitialization
+  const debounce = (func, wait) => {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  };
 
-    const timeframeMap: Record<string, string> = {
+  const reinitializeWidget = () => {
+    cleanup();
+    initializeWidget();
+  };
+
+  const cleanup = () => {
+    const existingWidget = document.getElementById(PRICE_CHART_ID);
+    if (existingWidget) existingWidget.innerHTML = '';
+    if (typeof window.destroyMyWidget === "function") {
+      try {
+        window.destroyMyWidget(PRICE_CHART_ID);
+      } catch (error) {
+        console.error("Widget cleanup error:", error);
+      }
+    }
+    setWidgetLoaded(false);
+  };
+
+  const initializeWidget = () => {
+    if (!pair || !pair.pairAddress || typeof window === "undefined" || 
+        !containerRef.current || typeof window.createMyWidget !== "function") {
+      return;
+    }
+
+    const timeframeMap = {
       "5m": "5",
       "15m": "15",
       "1h": "60",
@@ -51,130 +108,104 @@ const TokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame }) => {
       return pair.chainId || "0x1";
     };
 
-    const loadWidget = () => {
-      if (typeof window.createMyWidget === "function" && containerRef.current && isMobile !== null) {
-        const chartChainId = getChartChainId();
-        console.log(`Initializing widget (mobile: ${isMobile}) with pair:`, pair.pairAddress);
-        
-        try {
-          window.createMyWidget(PRICE_CHART_ID, {
-            autoSize: true,
-            chainId: chartChainId,
-            pairAddress: pair.pairAddress,
-            defaultInterval: timeframeMap[timeFrame] || "1D",
-            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone ?? "Etc/UTC",
-            backgroundColor: "#0f1118",
-            gridColor: "#1D2330",
-            textColor: "#7F85A1",
-            candleUpColor: "#16C784",
-            candleDownColor: "#EA3943",
-            borderColor: "#0D111C",
-            tooltipBackgroundColor: "#171D2E",
-            volumeUpColor: "rgba(22, 199, 132, 0.5)",
-            volumeDownColor: "rgba(234, 57, 67, 0.5)",
-            lineColor: "#3576F2",
-            locale: "en",
-            hideLeftToolbar: isMobile,
-            hideTopToolbar: false,
-            hideBottomToolbar: false,
-            width: "100%",
-            height: isMobile ? "400px" : "70vh"
-          });
-          setWidgetLoaded(true);
-        } catch (error) {
-          console.error("Widget initialization error:", error);
-          showErrorFallback();
-        }
-      }
-    };
+    const chartChainId = getChartChainId();
+    const container = containerRef.current;
 
-    const cleanup = () => {
-      const existingWidget = document.getElementById(PRICE_CHART_ID);
-      if (existingWidget) {
-        existingWidget.innerHTML = '';
-      }
-      
-      if (typeof window.destroyMyWidget === "function") {
-        try {
-          window.destroyMyWidget(PRICE_CHART_ID);
-        } catch (error) {
-          console.error("Widget cleanup error:", error);
-        }
-      }
-      setWidgetLoaded(false);
-    };
+    // Set container size consistently regardless of device
+    container.style.height = containerHeight;
+    container.style.width = '100%';
+    container.style.minHeight = '400px';
+
+    try {
+     // In your initializeWidget function:
+        window.createMyWidget(PRICE_CHART_ID, {
+          chainId: chartChainId,
+          pairAddress: pair.pairAddress,
+          defaultInterval: timeframeMap[timeFrame] || "1D",
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone ?? "Etc/UTC",
+          backgroundColor: "#0f1118",
+          width: "100%",
+          height: "100%",
+          autoSize: true,
+          // Mobile-specific options
+          isMobile: window.innerWidth <= 768,
+          mobileScale: 0.8 // Adjust if needed
+        });
+      setWidgetLoaded(true);
+    } catch (error) {
+      console.error("Widget initialization error:", error);
+      showErrorFallback();
+    }
+  };
+// Add this to your component to verify mobile rendering
+useEffect(() => {
+  console.log('Current container dimensions:', {
+    width: containerRef.current?.offsetWidth,
+    height: containerRef.current?.offsetHeight,
+    mobile: window.innerWidth <= 768
+  });
+}, [containerHeight, widgetLoaded]);
+
+
+  useEffect(() => {
+    if (!pair || !pair.pairAddress || typeof window === "undefined") return;
 
     const loadScript = () => {
-      if (!document.getElementById("moralis-chart-widget")) {
-        const script = document.createElement("script");
-        script.id = "moralis-chart-widget";
-        script.src = "https://moralis.com/static/embed/chart.js";
-        script.type = "text/javascript";
-        script.async = true;
-    
-        let retries = 3;
-        const tryLoadScript = () => {
-          script.onload = () => {
-            const readyCheckInterval = setInterval(() => {
-              if (typeof window.createMyWidget === "function") {
-                clearInterval(readyCheckInterval);
-                loadWidget();
-              }
-            }, 100);
-    
-            // const loadTimeout = setTimeout(() => {
-            //   clearInterval(readyCheckInterval);
-            //   if (!window.createMyWidget && retries > 0) {
-            //     retries--;
-            //     console.warn(`Retrying script load (${retries} retries left)`);
-            //     document.body.removeChild(script);
-            //     document.body.appendChild(script.cloneNode(true));
-            //     tryLoadScript();
-            //   } else {
-            //     console.error("Widget initialization timed out");
-            //     showErrorFallback();
-            //   }
-            // }, 10000);
-          };
-    
-          script.onerror = () => {
-            if (retries > 0) {
-              retries--;
-              console.warn(`Retrying script load (${retries} retries left)`);
-              document.body.removeChild(script);
-              document.body.appendChild(script.cloneNode(true));
-              tryLoadScript();
-            } else {
-              console.error("Failed to load Moralis chart script");
-              showErrorFallback();
-            }
-          };
-    
-          document.body.appendChild(script);
-        };
-    
-        tryLoadScript();
-      } else {
-        loadWidget();
+      if (document.getElementById("moralis-chart-widget")) {
+        initializeWidget();
+        return;
       }
+
+      const script = document.createElement("script");
+      script.id = "moralis-chart-widget";
+      script.src = "https://moralis.com/static/embed/chart.js";
+      script.type = "text/javascript";
+      script.async = true;
+
+      script.onload = () => {
+        const readyCheckInterval = setInterval(() => {
+          if (typeof window.createMyWidget === "function") {
+            clearInterval(readyCheckInterval);
+            initializeWidget();
+          }
+        }, 200);
+      };
+
+      script.onerror = () => {
+        console.error("Failed to load Moralis chart script");
+        showErrorFallback();
+      };
+
+      document.body.appendChild(script);
     };
 
     cleanup();
     loadScript();
 
     return cleanup;
-  }, [pair, timeFrame, isMobile]);
+  }, [pair, timeFrame]);
 
-  const showErrorFallback = () => {
+  // Handle widget updates when needed properties change
+  useEffect(() => {
+    if (widgetLoaded && pair) {
+      reinitializeWidget();
+    }
+  }, [containerHeight]);
+
+  const showErrorFallback = (message = "Failed to load chart. Please refresh or try again later.") => {
     const chartContainer = document.getElementById(PRICE_CHART_ID);
     if (chartContainer) {
       chartContainer.innerHTML = `
         <div class="h-full flex items-center justify-center text-dex-text-secondary p-4 text-center">
-          Failed to load chart. Please refresh or try again later.
+          ${message}
         </div>
       `;
     }
   };
+
+  useEffect(() => {
+    console.log("Chart mounted", pair);
+  }, []);
 
   if (!pair) {
     return (
@@ -223,13 +254,21 @@ const TokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame }) => {
         </div>
       </div>
 
-      {/* Chart Container */}
-      <div 
-        id={PRICE_CHART_ID}
-        ref={containerRef}
-        className="bg-dex-bg-secondary rounded-lg w-full"
-        style={{ height: isMobile ? '400px' : '70vh' }}
-      />
+      {/* Chart Container with fixed responsive height */}
+   
+        <div 
+          id={PRICE_CHART_ID}
+          ref={containerRef}
+          className="bg-dex-bg-secondary rounded-lg w-full"
+          style={{ 
+            height: containerHeight,
+            minHeight: '300px', // Lower minimum for mobile
+            maxHeight: '70vh', // Prevent being too tall
+            overflow: 'hidden',
+            border: '1px solid red',
+            position: 'relative' // Important for widget positioning
+          }}
+        />
     </div>
   );
 };
