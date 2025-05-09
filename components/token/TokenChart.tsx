@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Pair } from "@/lib/tokenTypes";
 import Image from 'next/image';
 
@@ -19,10 +19,23 @@ const PRICE_CHART_ID = "price-chart-widget-container";
 
 const TokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [, setWidgetLoaded] = useState(false);
+
+  // Track mobile state and handle resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     if (!pair || !pair.pairAddress || typeof window === "undefined") return;
-  
+
     const timeframeMap: Record<string, string> = {
       "5m": "5",
       "15m": "15",
@@ -30,109 +43,128 @@ const TokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame }) => {
       "4h": "240",
       "1d": "1D",
     };
-  
+
     const getChartChainId = () => {
-      if (
-        pair.chainId === "solana" ||
-        pair.exchangeName?.toLowerCase().includes("solana")
-      ) {
+      if (pair.chainId === "solana" || pair.exchangeName?.toLowerCase().includes("solana")) {
         return "solana";
       }
       return pair.chainId || "0x1";
     };
-  
+
     const loadWidget = () => {
       if (typeof window.createMyWidget === "function") {
         const chartChainId = getChartChainId();
-        console.log("Initializing widget with pair:", pair.pairAddress, "timeFrame:", timeFrame);
+        console.log(`Initializing widget (mobile: ${isMobile}) with pair:`, pair.pairAddress);
         
-        // Mobile detection
-        const isMobile = window.innerWidth <= 768;
-        
-        window.createMyWidget(PRICE_CHART_ID, {
-          autoSize: true,
-          chainId: chartChainId,
-          pairAddress: pair.pairAddress,
-          defaultInterval: timeframeMap[timeFrame] || "1D",
-          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone ?? "Etc/UTC",
-          backgroundColor: "#0f1118",
-          gridColor: "#1D2330",
-          textColor: "#7F85A1",
-          candleUpColor: "#16C784",
-          candleDownColor: "#EA3943",
-          borderColor: "#0D111C",
-          tooltipBackgroundColor: "#171D2E",
-          volumeUpColor: "rgba(22, 199, 132, 0.5)",
-          volumeDownColor: "rgba(234, 57, 67, 0.5)",
-          lineColor: "#3576F2",
-          locale: "en",
-          hideLeftToolbar: isMobile, // Only hide on mobile
-          hideTopToolbar: isMobile,
-          hideBottomToolbar: isMobile,
-          width: "100%",
-          height: "100%"
-        });
+        try {
+          window.createMyWidget(PRICE_CHART_ID, {
+            autoSize: true,
+            chainId: chartChainId,
+            pairAddress: pair.pairAddress,
+            defaultInterval: timeframeMap[timeFrame] || "1D",
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone ?? "Etc/UTC",
+            backgroundColor: "#0f1118",
+            gridColor: "#1D2330",
+            textColor: "#7F85A1",
+            candleUpColor: "#16C784",
+            candleDownColor: "#EA3943",
+            borderColor: "#0D111C",
+            tooltipBackgroundColor: "#171D2E",
+            volumeUpColor: "rgba(22, 199, 132, 0.5)",
+            volumeDownColor: "rgba(234, 57, 67, 0.5)",
+            lineColor: "#3576F2",
+            locale: "en",
+            hideLeftToolbar: isMobile,
+            hideTopToolbar: false,
+            hideBottomToolbar: false,
+            width: "100%",
+            height: isMobile ? "400px" : "70vh"
+          });
+          setWidgetLoaded(true);
+        } catch (error) {
+          console.error("Widget initialization error:", error);
+          showErrorFallback();
+        }
       }
     };
-  
+
     const cleanup = () => {
       const existingWidget = document.getElementById(PRICE_CHART_ID);
       if (existingWidget) {
-        while (existingWidget.firstChild) {
-          existingWidget.removeChild(existingWidget.firstChild);
-        }
+        existingWidget.innerHTML = '';
       }
       
       if (typeof window.destroyMyWidget === "function") {
-        window.destroyMyWidget(PRICE_CHART_ID);
+        try {
+          window.destroyMyWidget(PRICE_CHART_ID);
+        } catch (error) {
+          console.error("Widget cleanup error:", error);
+        }
+      }
+      setWidgetLoaded(false);
+    };
+
+    const loadScript = () => {
+      if (!document.getElementById("moralis-chart-widget")) {
+        const script = document.createElement("script");
+        script.id = "moralis-chart-widget";
+        script.src = "https://moralis.com/static/embed/chart.js";
+        script.type = "text/javascript";
+        script.async = true;
+    
+        let retries = 3;
+        const tryLoadScript = () => {
+          script.onload = () => {
+            const readyCheckInterval = setInterval(() => {
+              if (typeof window.createMyWidget === "function") {
+                clearInterval(readyCheckInterval);
+                loadWidget();
+              }
+            }, 100);
+    
+            // const loadTimeout = setTimeout(() => {
+            //   clearInterval(readyCheckInterval);
+            //   if (!window.createMyWidget && retries > 0) {
+            //     retries--;
+            //     console.warn(`Retrying script load (${retries} retries left)`);
+            //     document.body.removeChild(script);
+            //     document.body.appendChild(script.cloneNode(true));
+            //     tryLoadScript();
+            //   } else {
+            //     console.error("Widget initialization timed out");
+            //     showErrorFallback();
+            //   }
+            // }, 10000);
+          };
+    
+          script.onerror = () => {
+            if (retries > 0) {
+              retries--;
+              console.warn(`Retrying script load (${retries} retries left)`);
+              document.body.removeChild(script);
+              document.body.appendChild(script.cloneNode(true));
+              tryLoadScript();
+            } else {
+              console.error("Failed to load Moralis chart script");
+              showErrorFallback();
+            }
+          };
+    
+          document.body.appendChild(script);
+        };
+    
+        tryLoadScript();
+      } else {
+        loadWidget();
       }
     };
-    
-    cleanup();
 
-    if (!document.getElementById("moralis-chart-widget")) {
-      const script = document.createElement("script");
-      script.id = "moralis-chart-widget";
-      script.src = "https://moralis.com/static/embed/chart.js";
-      script.type = "text/javascript";
-      script.async = true;
-      
-      let loadTimeout: NodeJS.Timeout;
-      let readyCheckInterval: ReturnType<typeof setInterval>;
-      
-      script.onload = () => {
-        readyCheckInterval = setInterval(() => {
-          if (typeof window.createMyWidget === "function") {
-            clearInterval(readyCheckInterval as unknown as number);
-            clearTimeout(loadTimeout);
-            loadWidget();
-          }
-        }, 100);
-        
-        loadTimeout = setTimeout(() => {
-          clearInterval(readyCheckInterval);
-          if (!window.createMyWidget) {
-            console.error("Widget initialization timed out");
-            showErrorFallback();
-          }
-        }, 10000);
-      };
-      
-      script.onerror = () => {
-        clearInterval(readyCheckInterval);
-        clearTimeout(loadTimeout);
-        console.error("Failed to load Moralis chart script");
-        showErrorFallback();
-      };
-      
-      document.body.appendChild(script);
-    } else {
-      loadWidget();
-    }
-  
+    cleanup();
+    loadScript();
+
     return cleanup;
-  }, [pair, timeFrame]);
-  
+  }, [pair, timeFrame, isMobile]);
+
   const showErrorFallback = () => {
     const chartContainer = document.getElementById(PRICE_CHART_ID);
     if (chartContainer) {
@@ -192,14 +224,12 @@ const TokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame }) => {
       </div>
 
       {/* Chart Container */}
-      <div className="bg-dex-bg-secondary rounded-lg flex-1 min-h-[300px] w-full">
-        <div
-          id={PRICE_CHART_ID}
-          ref={containerRef}
-          className="w-full h-full"
-          style={{ minHeight: '300px' }}
-        />
-      </div>
+      <div 
+        id={PRICE_CHART_ID}
+        ref={containerRef}
+        className="bg-dex-bg-secondary rounded-lg w-full"
+        style={{ height: typeof window !== 'undefined' && window.innerWidth <= 768 ? '400px' : '70vh' }}
+      />
     </div>
   );
 };

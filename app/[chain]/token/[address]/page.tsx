@@ -269,11 +269,12 @@ const TokenPage: React.FC = () => {
             )}
             <TokenInfo token={tokenInfo} pair={selectedPair} timeFrame={timeFrame} chainId={chainId} />
           </div> */}
-          <div className="border-t border-dex-border">
-          <TokenChart pair={selectedPair} timeFrame={timeFrame} onTimeFrameChange={handleTimeFrameChange} />
-            <TokenTabs  />
-            
+       <div className="border-t border-dex-border">
+          <div className="min-h-[400px] w-full">
+            <TokenChart pair={selectedPair} timeFrame={timeFrame} onTimeFrameChange={handleTimeFrameChange} />
           </div>
+          <TokenTabs />
+        </div>
           <div className="flex-1 overflow-x-scroll">
             <div className="md:w-[calc(100vw-300px)] md:h-[calc(180vh-160px)] w-full h-full flex p-[6px] ">
               

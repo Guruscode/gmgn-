@@ -10,8 +10,7 @@ import { Suspense } from "react";
 import '@rainbow-me/rainbowkit/styles.css';
 import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
-import { config } from "@/lib/walletConfig"; // your config file
-
+import { config } from "@/lib/walletConfig";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
@@ -28,20 +27,30 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+      </head>
       <body
-        className={`${poppins.variable} antialiased dark:bg-[#111111] bg-[#f4f4f5] text-[#111111] dark:text-[#f4f4f5]`}
+        className={`${poppins.variable} antialiased dark:bg-[#111111] bg-[#f4f4f5] text-[#111111] dark:text-[#f4f4f5] min-h-screen flex flex-col`}
       >
         <WagmiProvider config={config}>
           <QueryClientProvider client={queryClient}>
             <RainbowKitProvider>
-              <Suspense>
+              {/* Separate Suspense boundaries for better loading control */}
+              <Suspense fallback={<div className="flex-1 flex items-center justify-center">Loading...</div>}>
                 <AuthLayout />
-                <MemeCoinsWidget />
-                <Header />
-                {children}
               </Suspense>
+              
+              <div className="flex flex-col flex-1">
+                <Header />
+                <Suspense fallback={null}>
+                  <MemeCoinsWidget />
+                </Suspense>
+                <main className="flex-1">
+                  {children}
+                </main>
+              </div>
             </RainbowKitProvider>
           </QueryClientProvider>
         </WagmiProvider>

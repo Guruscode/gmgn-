@@ -922,9 +922,9 @@ interface Pair {
           // Normalize the API response
           const normalizedData: PoolInfoData = {
             totalLiquidityUsd: pairData.liquidityUsd || 0,
-            totalLiquiditySol: pairData.liquiditySol || 0, // Adjust based on actual API response
-            marketCap: pairData.marketCap || 0, // Adjust based on actual API response
-            holders: pairData.holders || 0, // Adjust based on actual API response
+            totalLiquiditySol: pairData.liquiditySol || 0, 
+            marketCap: pairData.marketCap || 0,
+            holders: pairData.holders || 0,
             totalSupply: pairData.totalSupply || 0, // Adjust based on actual API response
             pairAddress: pairData.pairAddress || pairAddress,
             tokenCreator: pairData.tokenCreator || '', // Adjust based on actual API response
