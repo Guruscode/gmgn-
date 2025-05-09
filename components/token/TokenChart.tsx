@@ -265,7 +265,7 @@ useEffect(() => {
             minHeight: '300px', // Lower minimum for mobile
             maxHeight: '70vh', // Prevent being too tall
             overflow: 'hidden',
-            border: '1px solid red',
+          
             position: 'relative' // Important for widget positioning
           }}
         />
