@@ -111,22 +111,22 @@ export default function TableBody() {
     }
   };
 
-  const getChainLogo = (chainId: string) => {
-    switch (chainId.toLowerCase()) {
-      case 'eth':
-      case 'ethereum':
-        return "/static/ether.webp";
-      case 'bsc':
-        return "/static/bsc.png";
-      case 'polygon':
-        return "/static/polygon.png";
-      case 'sol':
-      case 'solana':
-        return "/static/solana.png";
-      default:
-        return "/static/ether.webp";
-    }
-  };
+  // const getChainLogo = (chainId: string) => {
+  //   switch (chainId.toLowerCase()) {
+  //     case 'eth':
+  //     case 'ethereum':
+  //       return "/static/ether.webp";
+  //     case 'bsc':
+  //       return "/static/bsc.png";
+  //     case 'polygon':
+  //       return "/static/polygon.png";
+  //     case 'sol':
+  //     case 'solana':
+  //       return "/static/solana.png";
+  //     default:
+  //       return "/static/ether.webp";
+  //   }
+  // };
   // const selectedChain = getChain();
   // const getChainLogo = (chainId: string) => {
   //   return getChainIcon(chainId); // Reuse getChainIcon to ensure consistency

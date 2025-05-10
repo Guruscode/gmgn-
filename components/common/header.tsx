@@ -43,10 +43,10 @@ export default function Header() {
             link: "/meme",
             linkText: "Meme"
         },
-        {
-            link: "/new-pair",
-            linkText: "New pair"
-        },
+        // {
+        //     link: "/new-pair",
+        //     linkText: "New pair"
+        // },
         {
             link: "/",
             linkText: "Trending"
