@@ -50,6 +50,7 @@ export default function TableBody() {
   const [memeCoins, setMemeCoins] = useState<MemeCoin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
 
   const getChain = useCallback(() => searchParams.get("chain") || "eth", [searchParams]);
 
@@ -85,21 +86,33 @@ export default function TableBody() {
     return `${Math.floor(diffDays / 365)}y`;
   };
 
-  const getChainLogo = (chainId: string) => {
-    switch (chainId.toLowerCase()) {
+  // Removed duplicate getChainLogo function to avoid redeclaration error
+  const getChainIcon = (chainId: string) => {
+    const chain = chainId.toLowerCase();
+    switch (chain) {
+      case 'sol':
+      case 'solana':
+        return "/static/solana.webp";
       case 'eth':
       case 'ethereum':
         return "/static/ether.webp";
+      case 'base':
+        return "/static/base.webp";
       case 'bsc':
-        return "/static/bsc.png";
+        return "/static/bsc.webp"; // Use .webp for consistency
+      case 'tron':
+        return "/static/tron.webp";
+      case 'blast':
+        return "/static/blast.webp";
       case 'polygon':
-        return "/static/polygon.png";
-      case 'sol':
-      case 'solana':
-        return "/static/solana.png";
+        return "/static/polygon.webp"; // Use .webp for consistency
       default:
-        return "/static/ether.webp";
+        return "/static/ether.webp"; // Default to ETH
     }
+  };
+  const selectedChain = getChain();
+  const getChainLogo = (chainId: string) => {
+    return getChainIcon(chainId); // Reuse getChainIcon to ensure consistency
   };
 
   const formatPercentage = (value?: number) => {
@@ -161,22 +174,27 @@ export default function TableBody() {
                 href={`/${coin.chainId}/token/${coin.tokenAddress}`}
               >
                 <div className="flex items-center gap-2">
-                  <div className="">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="md:w-[16px] w-[13px]" width="16px" height="16px" fill="#AEB2BD" viewBox="0 0 16 16">
-                      <g clipPath="url(#clip0_6939_489)">
-                        <path fillRule="evenodd" clipRule="evenodd" d="M6.421.99a1.754 1.754 0 013.158 0l1.587 3.127 3.352.603c1.414.254 1.976 2.051.975 3.121l-2.37 2.536.484 3.5c.204 1.477-1.267 2.587-2.554 1.93L8 14.245l-3.053 1.56c-1.287.658-2.758-.452-2.554-1.929l.484-3.5L.507 7.84c-1-1.07-.439-2.867.975-3.121l3.352-.603L6.421.99z"></path>
-                      </g>
-                    </svg>
+                <div className="">
+<div className="w-[16px] h-[16px]">
+  <Image 
+    src={getChainIcon(coin.chainId)}
+    alt={coin.chainId}
+    width={16}
+    height={16}
+    className="w-full h-full"
+  />
+</div>
                   </div>
                   <div className="flex items-center gap-1">
                     <div className="rounded-full border w-fit relative">
-                      <Image 
-                        src={coin.logo || "/static/3717.png"} 
-                        className='md:w-[30px] w-[25px] md:h-[30px] h-[25px]' 
-                        width={35} 
-                        height={35} 
-                        alt={`${coin.name} logo`} 
-                      />
+                    <Image 
+  src={getChainIcon(selectedChain)}
+  alt={selectedChain}
+  width={16}
+  height={16}
+  className="w-full h-full"
+  onError={(e) => (e.currentTarget.src = "/static/default-chain.webp")} // Fallback image
+/>
                       <Image 
                         src={getChainLogo(coin.chainId)} 
                         className='md:w-[15px] w-[10px] md:h-[15px] h-[10px] absolute bottom-0 right-0' 

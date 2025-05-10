@@ -262,7 +262,7 @@ useEffect(() => {
           className="bg-dex-bg-secondary rounded-lg w-full"
           style={{ 
             height: containerHeight,
-            minHeight: '300px', // Lower minimum for mobile
+            minHeight: '600px', // Lower minimum for mobile
             maxHeight: '70vh', // Prevent being too tall
             overflow: 'hidden',
           

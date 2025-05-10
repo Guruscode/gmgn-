@@ -255,39 +255,35 @@ const TokenPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="md:hidden block">
-        
-        {/* <MobileTradingHeader /> */}
-        <div className="flex flex-col h-full bg-dark:bg-[#111111]">
-          <div className="flex-1 p-4">
-            {/* <TokenChart pair={selectedPair} timeFrame={timeFrame} onTimeFrameChange={handleTimeFrameChange} /> */}
-          </div>
-          {/* <div className="w-full border-t border-dex-border overflow-y-auto">
-            {pairs.length > 1 && (
-              <div className="border-b border-dex-border p-4">
-                <PairSelector pairs={pairs} selectedPair={selectedPair} onSelect={handlePairSelect} />
-              </div>
-            )}
-            <TokenInfo token={tokenInfo} pair={selectedPair} timeFrame={timeFrame} chainId={chainId} />
-          </div> */}
-       <div className="border-t border-dex-border">
-          <div className="min-h-[300px] w-full">
-            <MobileTokenChart pair={selectedPair} timeFrame={timeFrame}  />
-          </div>
-          <TokenTabs />
-        </div>
-          <div className="flex-1 overflow-x-scroll">
-            <div className="md:w-[calc(100vw-300px)] md:h-[calc(180vh-160px)] w-full h-full flex p-[6px] ">
-              
-            {activeTab === "transactions" && selectedPair && (
-              
-              <TokenTransactions pair={selectedPair} chainId={selectedPair.chainId} />
-            )}
-            {activeTab === "holders" && tokenInfo && <TokenHolders token={tokenInfo} chainId={chainId} />}
-            </div>
-          </div>
-        </div>
+      <div className="block md:hidden">
+  <div className="flex flex-col h-full bg-dark:bg-[#111111]">
+    {/* Chart Section */}
+    <div className="border-t border-dex-border">
+      <div className="min-h-[300px] w-full">
+        <MobileTokenChart pair={selectedPair} timeFrame={timeFrame} />
       </div>
+      <TokenTabs />
+    </div>
+    
+    {/* Content Section */}
+    <div className="flex-1 overflow-x-auto"> {/* Changed from overflow-x-scroll to overflow-x-auto */}
+      <div className="w-full min-h-[50vh] p-2"> {/* Simplified sizing and padding */}
+        {activeTab === "transactions" && selectedPair && (
+          <TokenTransactions 
+            pair={selectedPair} 
+            chainId={selectedPair.chainId} 
+          />
+        )}
+        {activeTab === "holders" && tokenInfo && (
+          <TokenHolders 
+            token={tokenInfo} 
+            chainId={chainId} 
+          />
+        )}
+      </div>
+    </div>
+  </div>
+</div>
 
       {/* Mobile bottom navigation from Component A */}
       <div className="flex w-full fixed bottom-[0px] z-[40] dark:bg-[#17181b] md:hidden">
