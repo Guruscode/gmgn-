@@ -110,10 +110,27 @@ export default function TableBody() {
         return "/static/ether.webp"; // Default to ETH
     }
   };
-  const selectedChain = getChain();
+
   const getChainLogo = (chainId: string) => {
-    return getChainIcon(chainId); // Reuse getChainIcon to ensure consistency
+    switch (chainId.toLowerCase()) {
+      case 'eth':
+      case 'ethereum':
+        return "/static/ether.webp";
+      case 'bsc':
+        return "/static/bsc.png";
+      case 'polygon':
+        return "/static/polygon.png";
+      case 'sol':
+      case 'solana':
+        return "/static/solana.png";
+      default:
+        return "/static/ether.webp";
+    }
   };
+  // const selectedChain = getChain();
+  // const getChainLogo = (chainId: string) => {
+  //   return getChainIcon(chainId); // Reuse getChainIcon to ensure consistency
+  // };
 
   const formatPercentage = (value?: number) => {
     if (value === undefined) return "0%";
@@ -188,19 +205,18 @@ export default function TableBody() {
                   <div className="flex items-center gap-1">
                     <div className="rounded-full border w-fit relative">
                     <Image 
-  src={getChainIcon(selectedChain)}
-  alt={selectedChain}
-  width={16}
-  height={16}
-  className="w-full h-full"
-  onError={(e) => (e.currentTarget.src = "/static/default-chain.webp")} // Fallback image
-/>
+                        src={coin.logo || "/static/3717.png"} 
+                        className='md:w-[30px] w-[25px] md:h-[30px] h-[25px]' 
+                        width={35} 
+                        height={35} 
+                        alt={`${coin.name} logo`} 
+                      />
                       <Image 
-                        src={getChainLogo(coin.chainId)} 
-                        className='md:w-[15px] w-[10px] md:h-[15px] h-[10px] absolute bottom-0 right-0' 
-                        width={15} 
-                        height={15} 
-                        alt={`${coin.chainId} logo`} 
+                        src={getChainIcon(coin.chainId)}
+                        alt={coin.chainId}
+                        width={18}
+                        height={18}
+                        className="absolute bottom-0 right-0"
                       />
                     </div>
                     <div className="">
