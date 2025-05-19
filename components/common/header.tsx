@@ -354,7 +354,9 @@ export default function Header() {
                                                                             <path d="M6 12a2 2 0 012-2h8a2 2 0 012 2v2a2 2 0 01-2 2H2h2a2 2 0 002-2v-2z" />
                                                                         </svg>
                                                                     </div>
+                                                                    <Link href="/wallet" className="relative z-10">
                                                                     <span className="relative z-10">My Wallet</span>
+                                                                    </Link>
                                                                 </button>
                                                                 
                                                                 <button className="w-full text-left px-4 py-3 text-lg text-gray-200 hover:text-white transition-all flex items-center gap-3 relative group overflow-hidden">
