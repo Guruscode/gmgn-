@@ -4,6 +4,9 @@ import { truncAddress } from "@/lib/utils";
 import Image from "next/image";
 // import { notFound } from 'next/navigation';
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useAccount } from "wagmi";
 
 /***
  *
@@ -18,6 +21,49 @@ export default function Page({ params }) {
   const [switchCurrency, setSwitchCurrency] = useState("USD");
   const currentCurrency = params?.chain;
   const [tableTableSwitch, setTableTabSwitch] = useState("1");
+  const { isConnected, isConnecting, isReconnecting, address, chain } = useAccount();
+  const router = useRouter();
+  const [isClient, setIsClient] = useState(false);
+
+  // Ensure client-side rendering
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Log connection status for debugging
+  useEffect(() => {
+    console.log({
+      isConnected,
+      isConnecting,
+      isReconnecting,
+      address,
+      chain: chain?.name,
+      chainId: chain?.id,
+      isClient,
+    });
+  }, [isConnected, isConnecting, isReconnecting, address, chain, isClient]);
+
+  // Redirect to homepage if wallet is not connected
+  useEffect(() => {
+    if (isClient && !isConnecting && !isReconnecting && !isConnected) {
+      console.log("Redirecting to / because wallet is not connected");
+      router.push("/");
+    }
+  }, [isClient, isConnected, isConnecting, isReconnecting, router]);
+
+  // Show loading state during SSR, connecting, or reconnecting
+  if (!isClient || isConnecting || isReconnecting) {
+    return (
+      <div className="p-4 text-white flex items-center justify-center min-h-screen">
+        Loading wallet connection...
+      </div>
+    );
+  }
+
+  // Prevent rendering until redirect if not connected
+  if (!isConnected) {
+    return null;
+  }
   return (
     <div className="p-4">
       {/* header with avatar and address */}
