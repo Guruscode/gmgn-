@@ -13,9 +13,10 @@ import TokenHolderInsights from "@/components/token/TokenHolderInsights";
 import Drawer from '@/components/common/drawer';
 // import MobileTradingHeader from '@/components/trading/mobileTrading';
 // import TradingHeader from '@/components/trading/trading';
-import { BuyTab, DegenAudit, PoolInfo, SellTab } from '@/components/trading/rightBar';
+import { BuyTab, DegenAudit, SellTab } from '@/components/trading/rightBar';
+import MobilePoolInfo from '@/components/token/MobilePoolInfo';
 
-import { Pair, Token } from "@/lib/tokenTypes";
+import { Pair, Token, PairToken } from "@/lib/tokenTypes";
 
 const API_KEY = process.env.NEXT_PUBLIC_MORALIS_API_KEY;
 
@@ -131,10 +132,11 @@ const TokenPage: React.FC = () => {
             address: pair.quoteToken.tokenAddress
           },
           pair: Array.isArray(pair.pair)
-            ? pair.pair.map((token: Token) => ({
+            ? pair.pair.map((token: PairToken) => ({
                 ...token,
                 symbol: token.tokenSymbol || 'Unknown',
-                address: token.tokenAddress
+                address: token.tokenAddress,
+                totalSupply: token.totalSupply
               }))
             : [],
         }));
@@ -310,8 +312,10 @@ const TokenPage: React.FC = () => {
     
           <Drawer isOpen={isOpen.info} onClose={() => setIsOpen((prev) => ({ ...prev, info: false }))}>
             <>
-            
-            <PoolInfo pairAddress={selectedPair?.pairAddress} chainId={chainId} />
+              <MobilePoolInfo 
+                tokenInfo={tokenInfo}
+                pair={selectedPair}
+              />
               <DegenAudit />
             </>
           </Drawer>

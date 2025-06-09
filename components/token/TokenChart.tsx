@@ -25,7 +25,11 @@ const TokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame, onTimeFrameCha
       el.innerHTML = "";
     }
     if (typeof window.destroyMyWidget === "function") {
-      window.destroyMyWidget(PRICE_CHART_ID);
+      try {
+        window.destroyMyWidget(PRICE_CHART_ID);
+      } catch (e) {
+        console.error("Destroy widget error:", e);
+      }
     }
   }, []);
 
@@ -64,53 +68,43 @@ const TokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame, onTimeFrameCha
     }
   }, [pair, timeFrame, onTimeFrameChange]);
 
-  const reinitializeWidget = useCallback(() => {
-    cleanup();
-    initializeWidget();
-  }, [cleanup, initializeWidget]);
-
-  const debounce = useCallback(<T extends (...args: unknown[]) => void>(func: T, wait: number) => {
-    let timeout: NodeJS.Timeout;
-    return function executedFunction(...args: Parameters<T>) {
-      const later = () => {
-        clearTimeout(timeout);
-        func(...args);
-      };
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-    };
-  }, []);
-
   useEffect(() => {
-    const handleResize = debounce(() => {
-      if (window.innerWidth <= 768) {
-        cleanup();
-      } else {
-        reinitializeWidget();
+    if (!pair) return;
+
+    const loadScript = () => {
+      if (document.getElementById("moralis-chart-widget")) {
+        const interval = setInterval(() => {
+          if (typeof window.createMyWidget === "function") {
+            clearInterval(interval);
+            initializeWidget();
+          }
+        }, 200);
+        return;
       }
-    }, 250);
 
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [cleanup, reinitializeWidget, debounce]);
+      const script = document.createElement("script");
+      script.id = "moralis-chart-widget";
+      script.src = "https://moralis.com/static/embed/chart.js";
+      script.async = true;
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      initializeWidget();
-    }
-    return cleanup;
-  }, [initializeWidget, cleanup]);
-
-  useEffect(() => {
-    if (pair) {
-      const checkMobile = () => {
-        if (window.innerWidth <= 768) {
-          cleanup();
-        }
+      script.onload = () => {
+        const interval = setInterval(() => {
+          if (typeof window.createMyWidget === "function") {
+            clearInterval(interval);
+            initializeWidget();
+          }
+        }, 200);
       };
-      checkMobile();
-    }
-  }, [pair, cleanup]);
+
+      script.onerror = () => console.error("Script load failed");
+      document.body.appendChild(script);
+    };
+
+    cleanup();
+    loadScript();
+
+    return cleanup;
+  }, [pair, timeFrame, initializeWidget, cleanup]);
 
   if (!pair) {
     return (
