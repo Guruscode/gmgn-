@@ -1,7 +1,7 @@
 import React from "react";
 // import Image from "next/image";
 
-import { Pair } from "@/lib/tokenTypes"; 
+import { Pair, TokenMetadata } from "@/lib/tokenTypes"; 
 
 
 // interface Pair {
@@ -16,22 +16,16 @@ import { Pair } from "@/lib/tokenTypes";
 
 
 interface PairSelectorProps {
-  pairs: Pair[] | null;
-  selectedPair: Pair | null;
-  onSelect: (pairAddress: string) => void;
-  tokenMetadata?: {
-    name?: string;
-    symbol?: string;
-    links?: {
-      website?: string;
-      twitter?: string;
-      telegram?: string;
-    };
-  };
+  tokenMetadata: TokenMetadata | null;
+  pair: Pair | null;
+  // Remove unused props
+  // pairs: Pair[] | null;
+  // selectedPair: Pair | null;
+  // onSelect: (pair: Pair) => void;
 }
 
 
-const PairSelector: React.FC<PairSelectorProps> = ({ pairs, selectedPair, onSelect, tokenMetadata }) => {
+const PairSelector: React.FC<PairSelectorProps> = ({ tokenMetadata, pair }) => {
   // const [isOpen, setIsOpen] = useState(false);
 
   // const formatLiquidity = (value?: number) => {
@@ -192,7 +186,7 @@ const PairSelector: React.FC<PairSelectorProps> = ({ pairs, selectedPair, onSele
                             Name
                         </div>
                     </a>
-                    <a className="flex text-[12px] dark:text-[#f5f5f5] text-[#000] justify-center items-center cursor-pointer border-r-[1px] border-[#393c43] flex-grow flex-shrink px-[8px] whitespace-nowrap" target="_blank" href={`https://x.com/search?q=${selectedPair?.pairAddress || ''}`}>
+                    <a className="flex text-[12px] dark:text-[#f5f5f5] text-[#000] justify-center items-center cursor-pointer border-r-[1px] border-[#393c43] flex-grow flex-shrink px-[8px] whitespace-nowrap" target="_blank" href={`https://x.com/search?q=${pair?.pairAddress || ''}`}>
                         <div className='flex items-center gap-[2px]'>
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9.213 1.988a7.14 7.14 0 017.135 7.234c-.035 3.922-3.28 7.111-7.203 7.082-3.985-.03-7.181-3.276-7.14-7.25.042-3.933 3.253-7.081 7.208-7.066zm-.058 12.61a5.473 5.473 0 005.508-5.412c.04-3.025-2.465-5.536-5.51-5.524-3.007.012-5.45 2.467-5.45 5.476a5.455 5.455 0 005.452 5.46z"></path>

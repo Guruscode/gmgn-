@@ -1,5 +1,35 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useCallback, useRef } from "react";
 import { Pair } from "@/lib/tokenTypes";
+
+interface TradingViewWidgetConfig {
+  container_id: string;
+  symbol: string;
+  interval: string;
+  theme: string;
+  style: string;
+  locale: string;
+  toolbar_bg: string;
+  enable_publishing: boolean;
+  hide_side_toolbar: boolean;
+  allow_symbol_change: boolean;
+  save_image: boolean;
+  height: string;
+  width: string;
+}
+
+interface TradingViewWidget {
+  onChartReady: (callback: () => void) => void;
+  setSymbol: (symbol: string, interval: string) => void;
+  remove: () => void;
+}
+
+declare global {
+  interface Window {
+    TradingView: {
+      widget: new (config: TradingViewWidgetConfig) => TradingViewWidget;
+    };
+  }
+}
 
 interface TokenChartProps {
   pair: Pair | null;
@@ -23,29 +53,32 @@ const MobileTokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame }) => {
     }
   };
 
-  const initializeWidget = () => {
-    if (!pair || !pair.pairAddress || typeof window === "undefined" || !containerRef.current) return;
-
-    const timeframeMap = {
-      "5m": "5",
-      "15m": "15",
-      "1h": "60",
-      "4h": "240",
-      "1d": "1D",
+  const initializeWidget = useCallback(() => {
+    cleanup();
+    const script = document.createElement("script");
+    script.src = "https://s3.tradingview.com/tv.js";
+    script.async = true;
+    script.onload = () => {
+      if (typeof window.TradingView !== "undefined") {
+        new window.TradingView.widget({
+          container_id: "tradingview_widget",
+          symbol: pair?.pairAddress || "",
+          interval: timeFrame,
+          theme: "dark",
+          style: "1",
+          locale: "en",
+          toolbar_bg: "#f1f3f6",
+          enable_publishing: false,
+          hide_side_toolbar: false,
+          allow_symbol_change: true,
+          save_image: false,
+          height: "100%",
+          width: "100%",
+        });
+      }
     };
-
-    window.createMyWidget?.(PRICE_CHART_ID, {
-      chainId: pair.chainId,
-      pairAddress: pair.pairAddress,
-      defaultInterval: timeframeMap[timeFrame] || "1D",
-      backgroundColor: "#0f1118",
-      width: "100%",
-      height: "100%",
-      autoSize: true,
-      isMobile: true,
-      mobileScale: 0.8,
-    });
-  };
+    document.head.appendChild(script);
+  }, [pair, timeFrame]);
 
   useEffect(() => {
     if (!pair) return;
@@ -83,7 +116,7 @@ const MobileTokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame }) => {
     loadScript();
 
     return cleanup;
-  }, [pair, timeFrame]);
+  }, [pair, timeFrame, initializeWidget]);
 
   if (!pair) return null;
 

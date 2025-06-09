@@ -142,7 +142,7 @@ const TokenPage: React.FC = () => {
         setPairs(normalizedPairs);
         setSelectedPair(normalizedPairs[0]);
 
-        if (!tokenInfo && normalizedPairs[0]?.pair?.length > 0) {
+        if (!tokenInfo && normalizedPairs[0]?.pair && Array.isArray(normalizedPairs[0].pair) && normalizedPairs[0].pair.length > 0) {
           const currentToken = normalizedPairs[0].pair.find(
             (token) => typeof tokenAddress === "string" && token.tokenAddress?.toLowerCase() === tokenAddress.toLowerCase()
           );
@@ -173,11 +173,6 @@ const TokenPage: React.FC = () => {
       fetchTokenPairs();
     }
   }, [chainId, tokenAddress, tokenInfo, isSolana, loadingState]);
-
-  const handlePairSelect = (pairAddress: string) => {
-    const pair = pairs.find((p) => p.pairAddress === pairAddress);
-    if (pair) setSelectedPair(pair);
-  };
 
   const handleTimeFrameChange = (newTimeFrame: string) => {
     setTimeFrame(newTimeFrame);
@@ -213,7 +208,7 @@ const TokenPage: React.FC = () => {
   return (
     <div className="">
       {/* Warning issue from Component A */}
-      {selectedPair && selectedPair.liquidityUsd <= 10000 && (
+      {selectedPair && selectedPair.liquidityUsd !== undefined && selectedPair.liquidityUsd <= 10000 && (
         <div className="">
           <div className="text-risk flex justify-center items-center h-[40px] gap-1 bg-riskWarn">
             <svg xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" fill="#FFD039" viewBox="0 0 14 14"><path fillRule="evenodd" clipRule="evenodd" d="M8.212 2.093a1.4 1.4 0 00-2.423 0L.517 11.198A1.4 1.4 0 001.73 13.3h10.544a1.4 1.4 0 001.211-2.101L8.212 2.093zM7.001 9.255a.7.7 0 01-.7-.7V5.6a.7.7 0 111.4 0v2.955a.7.7 0 01-.7.7zm.7 1.167a.7.7 0 11-1.4 0 .7.7 0 011.4 0z"></path></svg>
@@ -232,10 +227,8 @@ const TokenPage: React.FC = () => {
             <div className="w-[300px] lg:w-50 xl:w-66 border-l border-dex-border">
               {pairs.length > 1 && (
                 <div className="border-b border-dex-border">
-         
-                  <PairSelector pairs={pairs} selectedPair={selectedPair} onSelect={handlePairSelect} />
-                  </div>
-               
+                  <PairSelector tokenMetadata={tokenInfo} pair={selectedPair} />
+                </div>
               )}
               <TokenInfo token={tokenInfo} pair={selectedPair} timeFrame={timeFrame} chainId={chainId} />
             </div>
