@@ -1,36 +1,6 @@
 import React, { useEffect, useCallback, useRef } from "react";
 import { Pair } from "@/lib/tokenTypes";
 
-interface TradingViewWidgetConfig {
-  container_id: string;
-  symbol: string;
-  interval: string;
-  theme: string;
-  style: string;
-  locale: string;
-  toolbar_bg: string;
-  enable_publishing: boolean;
-  hide_side_toolbar: boolean;
-  allow_symbol_change: boolean;
-  save_image: boolean;
-  height: string;
-  width: string;
-}
-
-interface TradingViewWidget {
-  onChartReady: (callback: () => void) => void;
-  setSymbol: (symbol: string, interval: string) => void;
-  remove: () => void;
-}
-
-declare global {
-  interface Window {
-    TradingView: {
-      widget: new (config: TradingViewWidgetConfig) => TradingViewWidget;
-    };
-  }
-}
-
 interface TokenChartProps {
   pair: Pair | null;
   timeFrame: string;
@@ -41,7 +11,7 @@ const PRICE_CHART_ID = "mobile-price-chart-widget-container";
 const MobileTokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const cleanup = () => {
+  const cleanup = useCallback(() => {
     const el = document.getElementById(PRICE_CHART_ID);
     if (el) el.innerHTML = "";
     if (typeof window.destroyMyWidget === "function") {
@@ -51,33 +21,31 @@ const MobileTokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame }) => {
         console.error("Destroy widget error:", e);
       }
     }
-  };
+  }, []);
 
   const initializeWidget = useCallback(() => {
-    cleanup();
-    const script = document.createElement("script");
-    script.src = "https://s3.tradingview.com/tv.js";
-    script.async = true;
-    script.onload = () => {
-      if (typeof window.TradingView !== "undefined") {
-        new window.TradingView.widget({
-          container_id: "tradingview_widget",
-          symbol: pair?.pairAddress || "",
-          interval: timeFrame,
-          theme: "dark",
-          style: "1",
-          locale: "en",
-          toolbar_bg: "#f1f3f6",
-          enable_publishing: false,
-          hide_side_toolbar: false,
-          allow_symbol_change: true,
-          save_image: false,
-          height: "100%",
-          width: "100%",
-        });
-      }
+    if (!pair || !pair.pairAddress || typeof window === "undefined" || !containerRef.current) return;
+
+    const timeframeMap = {
+      "5m": "5",
+      "15m": "15",
+      "1h": "60",
+      "4h": "240",
+      "1d": "1D",
     };
-    document.head.appendChild(script);
+
+    if (typeof window.createMyWidget === "function") {
+      window.createMyWidget(PRICE_CHART_ID, {
+        chainId: pair.chainId,
+        pairAddress: pair.pairAddress,
+        defaultInterval: timeframeMap[timeFrame] || "1D",
+        backgroundColor: "#0f1118",
+        width: "100%",
+        height: "100%",
+        autoSize: true,
+        isMobile: true,
+      });
+    }
   }, [pair, timeFrame]);
 
   useEffect(() => {
@@ -116,7 +84,7 @@ const MobileTokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame }) => {
     loadScript();
 
     return cleanup;
-  }, [pair, timeFrame, initializeWidget]);
+  }, [pair, timeFrame, initializeWidget, cleanup]);
 
   if (!pair) return null;
 
@@ -127,7 +95,7 @@ const MobileTokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame }) => {
         id={PRICE_CHART_ID}
         ref={containerRef}
         className="bg-dex-bg-secondary rounded-lg w-full"
-        style={{ height: "280px", minHeight: "280px", overflow: "hidden" }}
+        style={{ height: "400px", minHeight: "400px", overflow: "hidden" }}
       />
     </div>
   );
