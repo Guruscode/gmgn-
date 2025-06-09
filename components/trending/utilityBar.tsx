@@ -29,20 +29,25 @@ import { updateUrlParams } from '@/lib/utils';
 
 
 
-export default function UtilityBar({ setSwitch, switchTabs }) {
+export default function UtilityBar({ setSwitch, switchTabs, onTimeFrameChange }) {
     const chain = useSearchParams()
     const [activeTimeFrame, setTimeFrame] = useState("1m")
     const getChain = useCallback(() => chain.get("chain"), [chain]);
+
+    const handleTimeFrameChange = (timeFrame) => {
+        setTimeFrame(timeFrame);
+        onTimeFrameChange?.(timeFrame);
+    };
 
     return (
         <div className='md:px-[1.3rem] px-[.5rem] py-[1rem] flex gap-2 flex-col md:flex-row justify-between items-center'>
             <div className="md:hidden flex  gap-2 items-center divide-x rounded-xl overflow-hidden w-full ">
                 <div className="grid md:hidden items-center divide-x rounded-xl overflow-hidden grid-cols-5 w-full">
-                    <button onClick={() => setTimeFrame("1m")} className={`flex items-center border-t border-b border-l justify-center text-[13px] ${activeTimeFrame == "1m" ? "dark:text-white bg-accent-1" : "text-accent-aux-1"}`}>{"1m"}</button>
-                    <button onClick={() => setTimeFrame("5m")} className={`flex items-center border-t border-b justify-center text-[13px] ${activeTimeFrame == "5m" ? "dark:text-white bg-accent-1" : "text-accent-aux-1"}`}>{"5m"}</button>
-                    <button onClick={() => setTimeFrame("1h")} className={`flex items-center border-t border-b justify-center text-[13px] ${activeTimeFrame == "1h" ? "dark:text-white bg-accent-1" : "text-accent-aux-1"}`}>{"1h"}</button>
-                    <button onClick={() => setTimeFrame("6h")} className={`flex items-center border-t border-b justify-center text-[13px] ${activeTimeFrame == "6h" ? "dark:text-white bg-accent-1" : "text-accent-aux-1"}`}>{"6h"}</button>
-                    <button onClick={() => setTimeFrame("24h")} className={`flex items-center border-t border-b border-r justify-center text-[13px] ${activeTimeFrame == "24h" ? "dark:text-white bg-accent-1" : "text-accent-aux-1"}`}>{"24h"}</button>
+                    <button onClick={() => handleTimeFrameChange("1m")} className={`flex items-center border-t border-b border-l justify-center text-[13px] ${activeTimeFrame == "1m" ? "dark:text-white bg-accent-1" : "text-accent-aux-1"}`}>{"1m"}</button>
+                    <button onClick={() => handleTimeFrameChange("5m")} className={`flex items-center border-t border-b justify-center text-[13px] ${activeTimeFrame == "5m" ? "dark:text-white bg-accent-1" : "text-accent-aux-1"}`}>{"5m"}</button>
+                    <button onClick={() => handleTimeFrameChange("1h")} className={`flex items-center border-t border-b justify-center text-[13px] ${activeTimeFrame == "1h" ? "dark:text-white bg-accent-1" : "text-accent-aux-1"}`}>{"1h"}</button>
+                    <button onClick={() => handleTimeFrameChange("6h")} className={`flex items-center border-t border-b justify-center text-[13px] ${activeTimeFrame == "6h" ? "dark:text-white bg-accent-1" : "text-accent-aux-1"}`}>{"6h"}</button>
+                    <button onClick={() => handleTimeFrameChange("24h")} className={`flex items-center border-t border-b border-r justify-center text-[13px] ${activeTimeFrame == "24h" ? "dark:text-white bg-accent-1" : "text-accent-aux-1"}`}>{"24h"}</button>
                 </div>
             </div>
             <div className="w-full flex items-center gap-5">
@@ -66,11 +71,11 @@ export default function UtilityBar({ setSwitch, switchTabs }) {
                 <div className="w-full flex md:flex-nowrap flex-wrap gap-3">
                     {/* request interval */}
                     <div className="md:grid hidden items-center divide-x rounded-xl overflow-hidden grid-cols-5">
-                        <button onClick={() => setTimeFrame("1m")} className={`h-[28px] w-[28px] min-w-[48px] flex items-center border-t border-b border-l justify-center text-[13px] ${activeTimeFrame == "1m" ? "dark:text-white bg-accent-1" : "text-accent-aux-1"}`}>{"1m"}</button>
-                        <button onClick={() => setTimeFrame("5m")} className={`h-[28px] w-[28px] min-w-[48px] flex items-center border-t border-b justify-center text-[13px] ${activeTimeFrame == "5m" ? "dark:text-white bg-accent-1" : "text-accent-aux-1"}`}>{"5m"}</button>
-                        <button onClick={() => setTimeFrame("1h")} className={`h-[28px] w-[28px] min-w-[48px] flex items-center border-t border-b justify-center text-[13px] ${activeTimeFrame == "1h" ? "dark:text-white bg-accent-1" : "text-accent-aux-1"}`}>{"1h"}</button>
-                        <button onClick={() => setTimeFrame("6h")} className={`h-[28px] w-[28px] min-w-[48px] flex items-center border-t border-b justify-center text-[13px] ${activeTimeFrame == "6h" ? "dark:text-white bg-accent-1" : "text-accent-aux-1"}`}>{"6h"}</button>
-                        <button onClick={() => setTimeFrame("24h")} className={`h-[28px] w-[28px] min-w-[48px] flex items-center border-t border-b border-r justify-center text-[13px] ${activeTimeFrame == "24h" ? "dark:text-white bg-accent-1" : "text-accent-aux-1"}`}>{"24h"}</button>
+                        <button onClick={() => handleTimeFrameChange("1m")} className={`h-[28px] w-[28px] min-w-[48px] flex items-center border-t border-b border-l justify-center text-[13px] ${activeTimeFrame == "1m" ? "dark:text-white bg-accent-1" : "text-accent-aux-1"}`}>{"1m"}</button>
+                        <button onClick={() => handleTimeFrameChange("5m")} className={`h-[28px] w-[28px] min-w-[48px] flex items-center border-t border-b justify-center text-[13px] ${activeTimeFrame == "5m" ? "dark:text-white bg-accent-1" : "text-accent-aux-1"}`}>{"5m"}</button>
+                        <button onClick={() => handleTimeFrameChange("1h")} className={`h-[28px] w-[28px] min-w-[48px] flex items-center border-t border-b justify-center text-[13px] ${activeTimeFrame == "1h" ? "dark:text-white bg-accent-1" : "text-accent-aux-1"}`}>{"1h"}</button>
+                        <button onClick={() => handleTimeFrameChange("6h")} className={`h-[28px] w-[28px] min-w-[48px] flex items-center border-t border-b justify-center text-[13px] ${activeTimeFrame == "6h" ? "dark:text-white bg-accent-1" : "text-accent-aux-1"}`}>{"6h"}</button>
+                        <button onClick={() => handleTimeFrameChange("24h")} className={`h-[28px] w-[28px] min-w-[48px] flex items-center border-t border-b border-r justify-center text-[13px] ${activeTimeFrame == "24h" ? "dark:text-white bg-accent-1" : "text-accent-aux-1"}`}>{"24h"}</button>
                     </div>
 
                     {getChain() == "sol" && <div className="grid lg:grid-cols-3 md:grid-cols-1 grid-cols-3 md:items-center gap-2 my-1">

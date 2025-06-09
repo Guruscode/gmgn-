@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Pair } from "@/lib/tokenTypes";
-import Image from 'next/image';
+import { createChart, ColorType } from "lightweight-charts";
 
 interface TokenChartProps {
   pair: Pair | null;
@@ -217,58 +217,13 @@ useEffect(() => {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Top bar with pair info and controls */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2 sm:gap-0">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center">
-          <div className="flex items-center mr-4">
-            <Image
-              src={pair.exchangeLogo || "/images/exchanges/default-exchange.svg"}
-              alt={pair.exchangeName}
-              width={24}
-              height={24}
-              className="mr-2 rounded-full"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.onerror = null;
-                target.src =
-                  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzM0Mzk0NyIvPjwvc3ZnPg==";
-              }}
-            />
-            <span className="font-medium text-dex-text-primary">
-              {pair.pairLabel}
-            </span>
-            <span className="ml-2 text-dex-text-secondary">
-              on {pair.exchangeName}
-            </span>
-          </div>
-
-          <div className="text-dex-text-secondary text-sm mt-2 sm:mt-0">
-            <span className="mr-2">
-              Volume: ${(pair.volume24hrUsd || 0).toLocaleString()}
-            </span>
-            <span className="hidden sm:inline">|</span>
-            <span className="mx-2">
-              Liquidity: ${(pair.liquidityUsd || 0).toLocaleString()}
-            </span>
-          </div>
-        </div>
-      </div>
-
       {/* Chart Container with fixed responsive height */}
-   
-        <div 
-          id={PRICE_CHART_ID}
-          ref={containerRef}
-          className="bg-dex-bg-secondary rounded-lg w-full"
-          style={{ 
-            height: containerHeight,
-            minHeight: '600px', // Lower minimum for mobile
-            maxHeight: '70vh', // Prevent being too tall
-            overflow: 'hidden',
-          
-            position: 'relative' // Important for widget positioning
-          }}
-        />
+      <div
+        id={PRICE_CHART_ID}
+        ref={containerRef}
+        className="bg-dex-bg-secondary rounded-lg w-full flex-1"
+        style={{ minHeight: "400px", overflow: "hidden" }}
+      />
     </div>
   );
 };

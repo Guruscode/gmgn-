@@ -144,6 +144,11 @@ export function formatValueWithColor(value: number, transactionType: string): { 
   return { text: `$${value.toFixed(2)}`, color };
 }
 
+export const formatPercentage = (value: number | undefined): string => {
+  if (value === undefined) return '0%';
+  const sign = value >= 0 ? '+' : '';
+  return `${sign}${value.toFixed(2)}%`;
+};
 
 export interface Token {
   tokenAddress: string;
