@@ -1,4 +1,3 @@
-
 export type Token = {
   tokenAddress: string;
   tokenName: string;
@@ -11,20 +10,43 @@ export type Token = {
   address?: string;
 };
 
-export type Pair = {
+export interface Pair {
   chainId: string;
   pairAddress: string;
-  exchangeName: string;
-  exchangeLogo: string;
-  pairLabel: string;
-  liquidityUsd: number;
-  usdPrice: number;
-  usdPrice24hrPercentChange: number;
-  volume24hrUsd: number;
-  baseToken: Token;
-  quoteToken: Token;
-  pair: Token[];
-};
+  pairLabel?: string;
+  exchangeName?: string;
+  liquidityUsd?: number;
+  pair?: PairToken[];
+}
+
+export interface PairToken {
+  tokenSymbol: string;
+  tokenAddress: string;
+  tokenName: string;
+  tokenLogo: string;
+  tokenDecimals: string;
+  amount?: number;
+  totalSupply?: number;
+}
+
+export interface TokenMetadata {
+  name?: string;
+  symbol?: string;
+  logo?: string;
+  totalSupplyFormatted?: string;
+  fullyDilutedValue?: number;
+  links?: {
+    website?: string;
+    twitter?: string;
+    telegram?: string;
+    discord?: string;
+  };
+  categories?: string[];
+  created_at?: string;
+  total_supply_formatted?: string;
+  market_cap?: number;
+  fully_diluted_valuation?: number;
+}
 
 export interface SniperTransaction {
   transactionHash: string;
