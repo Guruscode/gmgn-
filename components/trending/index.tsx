@@ -8,6 +8,7 @@ import { useSearchParams } from "next/navigation";
 export default function Trending() {
     const searchParams = useSearchParams();
     const [switchTabs, setSwitch] = useState('1'); // Default to '1'
+    const [timeFrame, setTimeFrame] = useState('1m'); // Default to '1m'
 
     useEffect(() => {
         // Initialize from search params (client-side only)
@@ -30,10 +31,14 @@ export default function Trending() {
         return () => window.removeEventListener("resize", handleResize);
     }, [searchParams]);
 
+    const handleTimeFrameChange = (newTimeFrame) => {
+        setTimeFrame(newTimeFrame);
+    };
+
     return (
         <div className='h-[90vh] overflow-hidden'>
-            <UtilityBar setSwitch={setSwitch} switchTabs={switchTabs} />
-            <Table /> {/* No need for conditional since both cases show Table */}
+            <UtilityBar setSwitch={setSwitch} switchTabs={switchTabs} onTimeFrameChange={handleTimeFrameChange} />
+            <Table timeFrame={timeFrame} />
             <Footer />
         </div>
     );

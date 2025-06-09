@@ -1,6 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { Pair } from "@/lib/tokenTypes";
-import Image from "next/image";
 
 interface TokenChartProps {
   pair: Pair | null;
@@ -11,7 +10,6 @@ const PRICE_CHART_ID = "mobile-price-chart-widget-container";
 
 const MobileTokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [, setWidgetLoaded] = useState(false);
 
   const cleanup = () => {
     const el = document.getElementById(PRICE_CHART_ID);
@@ -47,8 +45,6 @@ const MobileTokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame }) => {
       isMobile: true,
       mobileScale: 0.8,
     });
-
-    setWidgetLoaded(true);
   };
 
   useEffect(() => {
@@ -93,40 +89,6 @@ const MobileTokenChart: React.FC<TokenChartProps> = ({ pair, timeFrame }) => {
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Pair Info Header (Mobile View) */}
-      <div className="flex flex-col justify-start items-start text-sm text-dex-text-secondary">
-        <div className="flex items-center mb-2">
-          <Image
-            src={pair.exchangeLogo || "/images/exchanges/default-exchange.svg"}
-            alt={pair.exchangeName}
-            width={24}
-            height={24}
-            className="mr-2 rounded-full"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.onerror = null;
-              target.src =
-                "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzM0Mzk0NyIvPjwvc3ZnPg==";
-            }}
-          />
-          <span className="font-medium text-dex-text-primary">
-            {pair.pairLabel}
-          </span>
-          <span className="ml-2 text-dex-text-secondary">
-            on {pair.exchangeName}
-          </span>
-        </div>
-        <div>
-          <span className="mr-2">
-            Volume: ${(pair.volume24hrUsd || 0).toLocaleString()}
-          </span>
-          <span className="mx-2">|</span>
-          <span>
-            Liquidity: ${(pair.liquidityUsd || 0).toLocaleString()}
-          </span>
-        </div>
-      </div>
-
       {/* Chart */}
       <div
         id={PRICE_CHART_ID}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Pair } from "@/lib/tokenTypes";
 import Image from 'next/image';
-import { copyToClipboard, truncAddress, formatNumber } from '@/lib/utils';
+import { copyToClipboard, truncAddress, formatNumber, formatPercentage } from '@/lib/utils';
 
 interface PairToken {
   tokenSymbol: string;
@@ -18,6 +18,7 @@ interface TokenSnipersProps {
     address: string;
     holders?: number;
     logo?: string;
+    createdAt?: number;
   } | null;
 }
 
@@ -44,6 +45,8 @@ interface PairStats {
   currentUsdPrice?: number;
   currentNativePrice?: number;
   totalLiquidityUsd?: number;
+  marketCap?: number;
+  holders?: number;
   pricePercentChange?: {
     [key: string]: number;
   };
@@ -220,6 +223,8 @@ const TokenInfo: React.FC<TokenSnipersProps> = ({ token, pair, chainId }) => {
           url = `https://deep-index.moralis.io/api/v2.2/erc20/${pair.pairAddress}/pairs?chain=${chainId}`;
         }
 
+        console.log('Fetching pool info from:', url);
+
         const response = await fetch(url, {
           headers: {
             accept: "application/json",
@@ -232,22 +237,76 @@ const TokenInfo: React.FC<TokenSnipersProps> = ({ token, pair, chainId }) => {
         }
 
         const data = await response.json();
+        console.log('Raw Pool Info API Response:', JSON.stringify(data, null, 2));
+
+        // For Solana chain, we need to fetch holder stats separately
+        if (chainId === "solana" && token?.address) {
+          try {
+            const analyticsUrl = `https://deep-index.moralis.io/api/v2.2/tokens/analytics?chain=solana&tokenAddress=${token.address}`;
+            console.log('Fetching token analytics from:', analyticsUrl);
+            
+            const analyticsResponse = await fetch(analyticsUrl, {
+              method: 'GET',
+              headers: {
+                'accept': 'application/json',
+                'X-API-Key': API_KEY || "",
+              },
+            });
+
+            if (!analyticsResponse.ok) {
+              console.warn('Analytics API returned:', analyticsResponse.status);
+            } else {
+              const analyticsData = await analyticsResponse.json();
+              console.log('Token Analytics Response:', JSON.stringify(analyticsData, null, 2));
+
+              if (analyticsData && typeof analyticsData === 'object') {
+                const holderCount = analyticsData.totalHolders || 
+                                  analyticsData.holderCount || 
+                                  analyticsData.holders || 
+                                  (analyticsData.result && analyticsData.result.totalHolders) ||
+                                  0;
+                
+                console.log('Found holder count:', holderCount);
+                data.holders = holderCount;
+              }
+            }
+          } catch (err) {
+            console.warn('Error fetching token analytics:', err);
+          }
+        }
+
         const pairData =
           data.pairs?.find((p: Pair) => p.pairAddress === pair.pairAddress) ||
           data;
 
+        // Try to get creation date from multiple sources
+        let creationDate = '';
+        if (pairData.poolCreated) {
+          creationDate = pairData.poolCreated;
+        } else if (pairData.created_at) {
+          creationDate = pairData.created_at;
+        } else if (pairData.createdAt) {
+          creationDate = pairData.createdAt;
+        } else if (pairStats?.pairCreated) {
+          creationDate = pairStats.pairCreated;
+        } else if (token?.createdAt) {
+          creationDate = new Date(token.createdAt * 1000).toISOString();
+        }
+
+        // Normalize the API response with fallback values
         const normalizedData: PoolInfoData = {
-          totalLiquidityUsd: pairData.liquidityUsd || 0,
-          totalLiquiditySol: pairData.liquiditySol || 0,
-          marketCap: pairData.marketCap || 0,
-          holders: pairData.holders || 0,
-          totalSupply: pairData.totalSupply || 0,
+          totalLiquidityUsd: pairData.liquidityUsd || pairData.totalLiquidityUsd || pair?.liquidityUsd || 0,
+          totalLiquiditySol: pairData.liquiditySol || pairData.totalLiquiditySol || 0,
+          marketCap: pairData.marketCap || pairData.market_cap || tokenMetadata?.market_cap || pairStats?.marketCap || 0,
+          holders: token?.holders || pairData.holders || data.holders || pairStats?.holders || 0,
+          totalSupply: pairData.totalSupply || pairData.totalSupplyFormatted || tokenMetadata?.totalSupplyFormatted || 0,
           pairAddress: pairData.pairAddress || pair.pairAddress,
-          tokenCreator: pairData.tokenCreator || "",
-          tokenCreatorBalance: pairData.tokenCreatorBalance || 0,
-          poolCreated: pairData.poolCreated || "",
+          tokenCreator: pairData.tokenCreator || pairData.creator || "",
+          tokenCreatorBalance: pairData.tokenCreatorBalance || pairData.creatorBalance || 0,
+          poolCreated: creationDate,
         };
 
+        console.log('Final normalized data:', normalizedData);
         setPoolInfo(normalizedData);
       } catch (err: unknown) {
         if (err instanceof Error) {
@@ -263,7 +322,7 @@ const TokenInfo: React.FC<TokenSnipersProps> = ({ token, pair, chainId }) => {
     };
 
     fetchPoolInfo();
-  }, [pair, chainId]);
+  }, [pair, chainId, token, tokenMetadata, pairStats]);
 
   const getTimePeriodData = (period: string) => {
     const apiPeriod = timeFrameMap[period] || "24h";
@@ -367,9 +426,6 @@ const TokenInfo: React.FC<TokenSnipersProps> = ({ token, pair, chainId }) => {
                 {tokenMetadata?.symbol || token.symbol}
               </span>
             </div>
-            <div className="text-sm text-[#8f8f92] mt-1">
-              {pair.pairLabel} on {pair.exchangeName}
-            </div>
           </div>
         </div>
 
@@ -389,7 +445,7 @@ const TokenInfo: React.FC<TokenSnipersProps> = ({ token, pair, chainId }) => {
           </div>
           <div>
             <div className="text-[#8f8f92]">Holders</div>
-            <div>{token.holders ? formatNumber(token.holders) : "N/A"}</div>
+            <div>{formatNumber(token?.holders || 0)}</div>
           </div>
         </div>
 
@@ -634,8 +690,8 @@ const TokenInfo: React.FC<TokenSnipersProps> = ({ token, pair, chainId }) => {
                   1m
                 </div>
                 <div className="text-[12px] flex dark:text-[9AA0AA]">
-                  <div className="flex text-accent-green w-full justify-center font-[500]">
-                    +0.87%
+                  <div className={`flex w-full justify-center font-[500] ${(pairStats?.pricePercentChange?.['1m'] ?? 0) >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                    {formatPercentage(pairStats?.pricePercentChange?.['1m'])}
                   </div>
                 </div>
               </div>
@@ -644,8 +700,8 @@ const TokenInfo: React.FC<TokenSnipersProps> = ({ token, pair, chainId }) => {
                   5m
                 </div>
                 <div className="text-[12px] flex dark:text-[9AA0AA]">
-                  <div className="flex text-accent-green w-full justify-center font-[500]">
-                    +4.87%
+                  <div className={`flex w-full justify-center font-[500] ${(pairStats?.pricePercentChange?.['5m'] ?? 0) >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                    {formatPercentage(pairStats?.pricePercentChange?.['5m'])}
                   </div>
                 </div>
               </div>
@@ -654,18 +710,18 @@ const TokenInfo: React.FC<TokenSnipersProps> = ({ token, pair, chainId }) => {
                   1h
                 </div>
                 <div className="text-[12px] flex dark:text-[9AA0AA]">
-                  <div className="flex text-accent-red w-full justify-center font-[500]">
-                    -12.87%
+                  <div className={`flex w-full justify-center font-[500] ${(pairStats?.pricePercentChange?.['1h'] ?? 0) >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                    {formatPercentage(pairStats?.pricePercentChange?.['1h'])}
                   </div>
                 </div>
               </div>
-              <div className="flex flex-col bg-transparent w-[20%] flex-grow justify-center text-accent-aux-1 cursor-pointer text-[12px] items-center h-[54px] flex-nowrap rounded-tl-[12px] rounded-tr-0 border-b border-accent-3">
+              <div className="flex flex-col bg-transparent w-[20%] flex-grow justify-center text-accent-aux-1 cursor-pointer text-[12px] items-center h-[54px] flex-nowrap rounded-tl-[12px] rounded-tr-0 border-b border-r border-accent-3">
                 <div className="flex justify-center dark:text-[#9AA0AA] w-full">
                   24h
                 </div>
                 <div className="text-[12px] flex dark:text-[9AA0AA]">
-                  <div className="flex text-accent-green w-full justify-center font-[500]">
-                    +223.7%
+                  <div className={`flex w-full justify-center font-[500] ${(pairStats?.pricePercentChange?.['24h'] ?? 0) >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                    {formatPercentage(pairStats?.pricePercentChange?.['24h'])}
                   </div>
                 </div>
               </div>
@@ -678,7 +734,7 @@ const TokenInfo: React.FC<TokenSnipersProps> = ({ token, pair, chainId }) => {
                   Vol
                 </div>
                 <div className="flex w-full justify-start font-[500]">
-                  $21.1K
+                  ${formatNumber(currentPeriodData.totalVolume)}
                 </div>
               </div>
 
@@ -687,7 +743,7 @@ const TokenInfo: React.FC<TokenSnipersProps> = ({ token, pair, chainId }) => {
                   Buys
                 </div>
                 <div className="flex w-full text-accent-green justify-start font-[500]">
-                  $21.1K
+                  ${formatNumber(currentPeriodData.buyVolume)}
                 </div>
               </div>
 
@@ -696,7 +752,7 @@ const TokenInfo: React.FC<TokenSnipersProps> = ({ token, pair, chainId }) => {
                   Sells
                 </div>
                 <div className="flex w-full text-accent-red justify-start font-[500]">
-                  $21.1K
+                  ${formatNumber(currentPeriodData.sellVolume)}
                 </div>
               </div>
 
@@ -705,7 +761,7 @@ const TokenInfo: React.FC<TokenSnipersProps> = ({ token, pair, chainId }) => {
                   Net Buy
                 </div>
                 <div className="flex w-full justify-start font-[500] text-accent-green">
-                  $21.1K
+                  ${formatNumber(currentPeriodData.buyVolume - currentPeriodData.sellVolume)}
                 </div>
               </div>
             </div>
@@ -745,19 +801,18 @@ const TokenInfo: React.FC<TokenSnipersProps> = ({ token, pair, chainId }) => {
                       <div className="flex w-full justify-between item-center">
                         <p>Total liq</p>
                         <p className="flex items-center">
-                        <div>${formatNumber(totalLiquidity)}</div>
-                          
+                          ${formatNumber(poolInfo.totalLiquidityUsd)} ({poolInfo.totalLiquiditySol.toFixed(2)} SOL)
                         </p>
                       </div>
                       <div className="flex w-full justify-between item-center">
                         <p>Market Cap</p>
                         <p className="flex items-center">
-                        <div>${formatNumber(marketCap)}</div>
+                          ${formatNumber(marketCap || poolInfo.marketCap)}
                         </p>
                       </div>
                       <div className="flex w-full justify-between item-center">
                         <p>Holders</p>
-                        <p className="flex items-center">{poolInfo.holders}</p>
+                        <p className="flex items-center">{formatNumber(token?.holders || 0)}</p>
                       </div>
                       <div className="flex w-full justify-between item-center">
                         <p>Total supply</p>
@@ -823,7 +878,7 @@ const TokenInfo: React.FC<TokenSnipersProps> = ({ token, pair, chainId }) => {
                       <div className="flex w-full justify-between item-center">
                         <p>Pool created</p>
                         <p className="flex items-center">
-                          {poolInfo.poolCreated}
+                          {poolInfo.poolCreated ? new Date(poolInfo.poolCreated).toLocaleDateString() : (token && token.createdAt ? new Date(token.createdAt * 1000).toLocaleDateString() : 'N/A')}
                         </p>
                       </div>
                     </div>
