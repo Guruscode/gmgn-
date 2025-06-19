@@ -358,7 +358,7 @@ export default function Header() {
                                                                     <span className="relative z-10">My Wallet</span>
                                                                     </Link>
                                                                 </button>
-                                                                
+                                                                <Link href="/referral">
                                                                 <button className="w-full text-left px-4 py-3 text-lg text-gray-200 hover:text-white transition-all flex items-center gap-3 relative group overflow-hidden">
                                                                     <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                                                     <div className="w-8 h-8 flex items-center justify-center relative z-10">
@@ -368,7 +368,7 @@ export default function Header() {
                                                                     </div>
                                                                     <span className="relative z-10">Referral</span>
                                                                 </button>
-                                                                
+                                                                </Link>
                                                                 <div className="border-t border-gray-700 my-1 "></div>
                                                                 
                                                                 <button className="w-full text-left px-4 py-3 text-lg text-white transition-all flex items-center gap-3 relative  mx-2 rounded-lg">
