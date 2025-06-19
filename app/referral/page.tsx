@@ -52,6 +52,7 @@ const copyToClipboard = (text: string) => {
 };
 
 export default function DiagonalCommissionChart() {
+  const [currentIndex, setCurrentIndex] = useState(1);
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [referredUsers, setReferredUsers] = useState<ReferredUser[]>([]);
   const [totalEarnings, setTotalEarnings] = useState(0);
@@ -68,15 +69,12 @@ export default function DiagonalCommissionChart() {
     { amount: 5000, volume: "Vol.1000k", position: getPointOnCurve(0.85) },
   ];
 
-  const getCommissionIndex = (referralCount: number) => {
-    if (referralCount >= 20) return 3;
-    if (referralCount >= 10) return 2;
-    if (referralCount >= 5) return 1;
-    return 0;
-  };
-
-  const currentIndex = getCommissionIndex(referredUsers.length);
-  const currentCommission = commissionData[currentIndex];
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % commissionData.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (isConnected && address) {
@@ -113,6 +111,9 @@ export default function DiagonalCommissionChart() {
       setTotalEarnings(0);
     }
   }, [isConnected, address, refCode]);
+
+  const currentCommission = commissionData[currentIndex];
+  const curveStart = getPointOnCurve(0);
 
   const currentUrl = typeof window !== "undefined" ? window.location.origin + pathname : "https://gmgn.ai";
   const queryParams = new URLSearchParams(searchParams.toString());
@@ -159,9 +160,7 @@ export default function DiagonalCommissionChart() {
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
           </div>
           <span className="text-gray-400 text-xs">Gem 100X - GMGN</span>
-       
-
- </div>
+        </div>
         <div className="bg-gray-800 rounded px-2 py-1 text-xs text-gray-300 font-mono">
           gmgn.ai/eth/token/<span className="text-red-400">xxxxxxxx</span>_0x123
         </div>
@@ -194,7 +193,7 @@ export default function DiagonalCommissionChart() {
     <div className="w-full min-h-screen">
       <div className="lg:hidden flex flex-col">
         {isConnected && referralCode && <ReferralCard />}
-        <div className="relative h-[400px] p-4">
+        <div className="relative h-[500px] p-4">
           <div className="mb-6">
             <h2 className="text-xl font-normal mb-4 leading-relaxed text-gray-200">
               Invite Friends and Earn
@@ -203,23 +202,23 @@ export default function DiagonalCommissionChart() {
             </h2>
             <div className="flex items-baseline gap-1">
               <span className="text-green-400 text-4xl font-bold">$</span>
-              <span className="text-blue-400 text-4xl font-bold">
+              <span className="text-blue-400 text-4xl font-bold transition-all duration-500">
                 {currentCommission.amount}
               </span>
               <span className="text-white text-xl ml-2">Commission</span>
             </div>
           </div>
-          <svg viewBox="0 0 100 100" className="w-full h-48 absolute bottom-0 left-0" preserveAspectRatio="none">
+          <svg viewBox="0 -20 100 120" className="w-full h-64 absolute bottom-0 left-0" preserveAspectRatio="none">
             <defs>
-              <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
-                <stop offset="50%" stopColor="#059669" stopOpacity="0.2" />
-                <stop offset="100%" stopColor="#064e3b" stopOpacity="0.1" />
+              <linearGradient id="areaGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#1A3C34" stopOpacity="0.1" />
+                <stop offset="50%" stopColor="#4CAF50" stopOpacity="0.3" />
+                <stop offset="100%" stopColor="#A5D6A7" stopOpacity="0.1" />
               </linearGradient>
               <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#10b981" stopOpacity="0.8" />
-                <stop offset="50%" stopColor="#34d399" stopOpacity="1" />
-                <stop offset="100%" stopColor="#6ee7b7" stopOpacity="0.9" />
+                <stop offset="0%" stopColor="#4CAF50" stopOpacity="0.8" />
+                <stop offset="50%" stopColor="#66BB6A" stopOpacity="1" />
+                <stop offset="100%" stopColor="#A5D6A7" stopOpacity="0.9" />
               </linearGradient>
               <filter id="glow">
                 <feGaussianBlur stdDeviation="0.5" result="coloredBlur" />
@@ -229,9 +228,9 @@ export default function DiagonalCommissionChart() {
                 </feMerge>
               </filter>
             </defs>
-            <path d="M 8 90 C 30 88, 70 60, 100 30 L 100 100 L 8 100 Z" fill="url(#areaGradient)" />
+            <path d="M 8 100 C 30 95, 70 70, 100 30 L 100 120 L 8 120 Z" fill="url(#areaGradient)" />
             <path
-              d="M 8 90 C 30 88, 70 60, 100 30"
+              d="M 8 100 C 30 95, 70 70, 100 30"
               stroke="url(#lineGradient)"
               strokeWidth="0.3"
               fill="none"
@@ -257,8 +256,8 @@ export default function DiagonalCommissionChart() {
           <div
             className="absolute transition-all duration-1000 ease-in-out z-20"
             style={{
-              left: `${currentCommission.position.x}%`,
-              bottom: `${100 - currentCommission.position.y + 5}%`, // Adjusted to position above the dot
+              left: `${currentCommission.position.x + 2}%`,
+              bottom: `${100 - currentCommission.position.y + 5}%`, /* Reduced margin to 5% above dot */
               transform: "translateX(-50%)",
             }}
           >
@@ -267,9 +266,7 @@ export default function DiagonalCommissionChart() {
               <div className="text-white font-semibold text-sm whitespace-nowrap">
                 ${currentCommission.amount}/month
               </div>
-              <svg width="2" height="12" className="mx-auto">
-                <path d="M 1 0 L 1 12" stroke="#6b7280" strokeWidth="1" fill="none" opacity="0.6" />
-              </svg>
+              <div className="w-px h-8 bg-gray-400 mx-auto mt-2 opacity-60"></div>
             </div>
           </div>
           {commissionData.map((data, index) => (
@@ -299,7 +296,7 @@ export default function DiagonalCommissionChart() {
           </div>
         )}
         <div className="flex-1 relative h-[480px]">
-          <div className="absolute top-8 z-10" style={{ left: `${getPointOnCurve(0).x - 2}%` }}>
+          <div className="absolute top-8 z-10" style={{ left: `${curveStart.x - 2}%` }}>
             <h2 className="text-xl font-normal mb-4 leading-relaxed text-gray-200">
               Invite Friends and Earn
               <br />
@@ -307,7 +304,7 @@ export default function DiagonalCommissionChart() {
             </h2>
             <div className="flex items-baseline gap-1">
               <span className="text-green-400 text-4xl font-bold">$</span>
-              <span className="text-blue-400 text-4xl font-bold">
+              <span className="text-blue-400 text-4xl font-bold transition-all duration-500">
                 {currentCommission.amount}
               </span>
               <span className="text-white text-xl ml-2">Commission</span>
@@ -315,15 +312,15 @@ export default function DiagonalCommissionChart() {
           </div>
           <svg viewBox="0 0 100 100" className="w-full h-full absolute inset-0" preserveAspectRatio="none">
             <defs>
-              <linearGradient id="areaGradientDesktop" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#10b981" stopOpacity="0" />
-                <stop offset="50%" stopColor="#059669" stopOpacity="0.2" />
-                <stop offset="100%" stopColor="#064e3B" stopOpacity="0" />
+              <linearGradient id="areaGradientDesktop" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#1A3C34" stopOpacity="0.1" />
+                <stop offset="50%" stopColor="#4CAF50" stopOpacity="0.3" />
+                <stop offset="100%" stopColor="#A5D6A7" stopOpacity="0.1" />
               </linearGradient>
               <linearGradient id="lineGradientDesktop" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#10b981" stopOpacity="0.8" />
-                <stop offset="50%" stopColor="#34d399" stopOpacity="1" />
-                <stop offset="100%" stopColor="#6ee7b7" stopOpacity="0.8" />
+                <stop offset="0%" stopColor="#4CAF50" stopOpacity="0.8" />
+                <stop offset="50%" stopColor="#66BB6A" stopOpacity="1" />
+                <stop offset="100%" stopColor="#A5D6A7" stopOpacity="0.8" />
               </linearGradient>
             </defs>
             <path d="M 8 90 C 30 88, 70 60, 100 30 L 100 100 L 8 100 Z" fill="url(#areaGradientDesktop)" />
@@ -340,7 +337,7 @@ export default function DiagonalCommissionChart() {
                 cy={data.position.y}
                 r="0.3"
                 fill="white"
-                className={`transition-all duration-1 ${index === currentIndex ? '' : 'opacity-80'}`}
+                className={`transition-all duration-1 ${index === currentIndex ? '' : 'opacity-80 opacity-0.8'}`}
               />
             ))}
           </svg>
@@ -348,18 +345,26 @@ export default function DiagonalCommissionChart() {
             className="absolute z-10"
             style={{
               left: `${currentCommission.position.x}%`,
-              top: `${currentCommission.position.y - 12}%`, // Position above the dot
+              top: `${currentCommission.position.y - 20}%`,
               transform: "translateX(-50%)",
             }}
           >
             <div className="text-center">
-              <div className="text-white text-xs opacity-60 mb-1">Earn commission</div>
+              <div className="text-white text-xs opacity-60 mb-2">Earn commission</div>
               <div className="text-white font-semibold text-sm whitespace-nowrap">
                 ${currentCommission.amount}
               </div>
-              <svg width="2" height="24" className="mx-auto">
-                <path d="M 1 0 L 1 24" stroke="#6b7280" strokeWidth="1" fill="none" opacity="0.6" />
-              </svg>
+              <div className="relative mt-2">
+                <svg width="2" height="45" className="mx-auto">
+                  <path
+                    d="M 1 0 Q 1 10, 1 20 Q 1 35, 1 45"
+                    stroke="#6b7280"
+                    strokeWidth="1"
+                    fill="none"
+                    opacity="0.6"
+                  />
+                </svg>
+              </div>
             </div>
           </div>
           {commissionData.map((data, index) => (
