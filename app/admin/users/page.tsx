@@ -54,8 +54,12 @@ export default function AdminUsersPage() {
         });
 
         setUsers(usersWithReferrals);
-      } catch (error: any) {
-        toast.error(`Failed to fetch data: ${error.message}`);
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          toast.error(`Failed to fetch data: ${error.message}`);
+        } else {
+          toast.error("Failed to fetch data: Unknown error");
+        }
       } finally {
         setLoading(false);
       }

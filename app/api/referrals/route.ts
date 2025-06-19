@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if user already referred
-    const { data: existingReferral, error: existingError } = await supabase
+    const { data: existingReferral } = await supabase
       .from("referrals")
       .select("id")
       .eq("referred_address", referred_address)

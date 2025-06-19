@@ -30,12 +30,13 @@ export default function Footer() {
                     </svg>
                     <p>About</p>
                 </a>
-                <a href="/referral" className='flex items-center font-[500] gap-1'>
+                
+                {/* <a href="/referral" className='flex items-center font-[500] gap-1'>
                     <svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10 0C4.477 0 0 4.477 0 10s4.477 10 10 10 10-4.477 10-10S15.523 0 10 0zM8.5 5.5a2.5 2.5 0 015 0 2.5 2.5 0 01-5 0zM11.5 15h-3v-1.5h3V15zM8.5 12.5h-1v-1h1v1zm4 0h-1v-1h1v1z"></path>
                     </svg>
                     <p>Refer</p>
-                </a>
+                </a> */}
                 <a href="">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" fill="currentColor" viewBox="0 0 20 20">
                         <g clipPath="url(#clip0_6600_49)">

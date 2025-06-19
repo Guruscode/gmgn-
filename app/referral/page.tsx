@@ -74,7 +74,7 @@ export default function DiagonalCommissionChart() {
       setCurrentIndex((prev) => (prev + 1) % commissionData.length);
     }, 2000);
     return () => clearInterval(interval);
-  }, []);
+  },);
 
   useEffect(() => {
     if (isConnected && address) {
