@@ -1,14 +1,17 @@
 'use client';
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip'
 import Image from 'next/image'
 import { useParams } from "next/navigation";
 import QuickSettingModal from '../common/quickSettingModal';
 import { Switch } from '../ui/switch';
 import { copyToClipboard, formatNumber, truncAddress } from '@/lib/utils';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { Connection } from '@solana/web3.js';
 
 export default function RightBar() {
-      const params = useParams();
+    console.log("RightBar function rendered");
+    const params = useParams();
     const chainPath = params.chain;
       const [selectedPair] = useState<Pair | null>(null);
    
@@ -270,6 +273,7 @@ export function TpslInput({ types }: { types: string }) {
 export function BuySellAuto() {
     // const [pairStats, setPairStats] = useState(null);
     const [tab, setTab] = useState("buy");
+    console.log("BuySellAuto function rendered, tab:", tab);
     
     return (
         <div className="bg-accent-2 w-full p-[12px] mt-3">
@@ -330,9 +334,36 @@ export function BuySellAuto() {
 }
 
 export function BuyTab() {
+    console.log("BuyTab function rendered");
     const [tpSlCheck, setTpSlCheck] = useState(false)
     const [moreSetting, setMoreSetting] = useState(false)
     const [buyTabs, setBuyTabs] = useState("buy-now")
+
+    // SOL balance logic
+    const { publicKey, connected } = useWallet();
+    const [solBalance, setSolBalance] = useState<string>('0');
+    useEffect(() => {
+        console.log('BuyTab - connected:', connected, 'publicKey:', publicKey?.toBase58?.());
+        const fetchBalance = async () => {
+            if (publicKey) {
+                try {
+                    console.log("Fetching balance for:", publicKey.toBase58());
+                    const connection = new Connection('https://rpc.shyft.to?api_key=u2aRZTkbFQrJy-Us');
+                    const balance = await connection.getBalance(publicKey);
+                    const sol = (balance / 1e9).toFixed(2);
+                    console.log("Fetched SOL balance:", sol);
+                    setSolBalance(sol);
+                } catch (err) {
+                    console.error("Error fetching balance:", err);
+                    setSolBalance('0');
+                }
+            }
+        };
+        if (connected && publicKey) {
+            fetchBalance();
+        }
+    }, [connected, publicKey]);
+    console.log("Rendering BuyTab, solBalance:", solBalance, "connected:", connected);
 
     return (
         <div className="flex flex-col gap-[8px] space-y-2 mt-2">
@@ -341,7 +372,7 @@ export function BuyTab() {
                     <div onClick={() => setBuyTabs("buy-now")} className={`flex font-[500] ${buyTabs == "buy-now" ? 'dark:text-[#ffff]' : 'dark:text-accent-aux-1'} cursor-pointer`}>Buy Now</div>
                     <div onClick={() => setBuyTabs("buy-dip")} className={`flex font-[500] ${buyTabs == "buy-dip" ? 'dark:text-[#ffff]' : 'dark:text-accent-aux-1'} cursor-pointer`}>Buy Dip</div>
                 </div>
-                <div className='flex whitespace-nowrap text-accent-aux-1'>Bal:--SOL</div>
+                <div className='flex whitespace-nowrap text-accent-aux-1'> {connected ? solBalance : '--'} SOL</div>
             </div>
 
             {/* tabs for buy now and buy dip */}
@@ -357,8 +388,35 @@ export function BuyTab() {
 
 
 export function SellTab() {
+    console.log("SellTab function rendered");
     const [moreSetting, setMoreSetting] = useState(false)
     const [sellTabs, setsellTabs] = useState("sell-now")
+
+    // SOL balance logic
+    const { publicKey, connected } = useWallet();
+    const [solBalance, setSolBalance] = useState<string>('0');
+    useEffect(() => {
+        console.log('SellTab - connected:', connected, 'publicKey:', publicKey?.toBase58?.());
+        const fetchBalance = async () => {
+            if (publicKey) {
+                try {
+                    console.log("Fetching balance for:", publicKey.toBase58());
+                    const connection = new Connection('https://rpc.shyft.to?api_key=u2aRZTkbFQrJy-Us');
+                    const balance = await connection.getBalance(publicKey);
+                    const sol = (balance / 1e9).toFixed(2);
+                    console.log("Fetched SOL balance:", sol);
+                    setSolBalance(sol);
+                } catch (err) {
+                    console.error("Error fetching balance:", err);
+                    setSolBalance('0');
+                }
+            }
+        };
+        if (connected && publicKey) {
+            fetchBalance();
+        }
+    }, [connected, publicKey]);
+    console.log("Rendering SellTab, solBalance:", solBalance, "connected:", connected);
 
     return (
         <div className="flex flex-col gap-[8px] space-y-2 mt-2">
@@ -367,7 +425,7 @@ export function SellTab() {
                     <div onClick={() => setsellTabs("sell-now")} className={`flex font-[500] ${sellTabs == "sell-now" ? 'dark:text-[#ffff]' : 'dark:text-accent-aux-1'} cursor-pointer capitalize`}>sell Now</div>
                     <div onClick={() => setsellTabs("sell-auto")} className={`flex font-[500] ${sellTabs == "sell-auto" ? 'dark:text-[#ffff]' : 'dark:text-accent-aux-1'} cursor-pointer capitalize`}>sell auto</div>
                 </div>
-                <div className='flex whitespace-nowrap text-accent-aux-1'>Bal:--SOL</div>
+                <div className='flex whitespace-nowrap text-accent-aux-1'>Bal: {connected ? solBalance : '--'} SOL</div>
             </div>
 
             {/* tabs for buy now and buy dip */}
@@ -407,7 +465,7 @@ export function SellNow() {
                             <div className='flex flex-grow flex-shrink py-1 cursor-pointer hover:bg-accent-3 gap-[4px] items-center justify-center text-[12px] font-[500] overflow-hidden text-ellipsis whitespace-nowrap text-accent-aux-1 border-b border-r border-accent-3'>
                                 <div>50%</div>
                             </div>
-                            <div className='flex flex-grow flex-shrink py-1 cursor-pointer hover:bg-accent-3 gap-[4px] items-center justify-center text-[12px] font-[500] overflow-hidden text-ellipsis whitespace-nowrap text-accent-aux-1 border-b border-r border-accent-3'>
+                            <div className='flex flex-grow flex-shrink py-1 cursor-pointer hover:bg-accent-3 gap-[4px] items-center justify-center text-[12px] font-[500] overflow-hidden text-ellipsis whitespace-nowrap text-accent-aux-1 border-b border-r  border-accent-3'>
                                 <div>75%</div>
                             </div>
                             <div className='flex flex-grow flex-shrink py-1 cursor-pointer hover:bg-accent-3 gap-[4px] items-center justify-center text-[12px] font-[500] overflow-hidden text-ellipsis whitespace-nowrap text-accent-aux-1 border-b border-r  border-accent-3'>
@@ -705,7 +763,6 @@ interface Pair {
     chainId: string;
   }
   
-  import  { useEffect } from "react";
   export function Metric({ pair, chainId }: MetricProps) {
     const [selectedTimeFrame, setSelectedTimeFrame] = useState("24h");
     const [pairStats, setPairStats] = useState<PairStats | null>(null);

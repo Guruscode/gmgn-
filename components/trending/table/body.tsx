@@ -45,13 +45,28 @@ interface MemeCoin {
     website?: string;
     telegram?: string;
   };
+  dexType?: string;
+  risk?: boolean;
+  washTraded?: boolean;
+  honeypot?: boolean;
+}
+
+interface Filters {
+    raydium: boolean;
+    pump: boolean;
+    moonshot: boolean;
+    risks: boolean;
+    washTraded: boolean;
+    honeypot: boolean;
+    tokenFilters: string[];
 }
 
 interface TableBodyProps {
     timeFrame: string;
+    filters: Filters;
 }
 
-export default function TableBody({ timeFrame }: TableBodyProps) {
+export default function TableBody({ timeFrame, filters }: TableBodyProps) {
     const searchParams = useSearchParams();
     const [memeCoins, setMemeCoins] = useState<MemeCoin[]>([]);
     const [loading, setLoading] = useState(true);
@@ -64,7 +79,16 @@ export default function TableBody({ timeFrame }: TableBodyProps) {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                const data = await getTrendingMemeCoins(getChain(), 100);
+                const data = await getTrendingMemeCoins(getChain(), 100, timeFrame);
+                if (data && data.length > 0) {
+                    console.log('Sample trending token object:', data[0]);
+                    if (data[0].pricePercentChange) {
+                        console.log('Available time frames:', Object.keys(data[0].pricePercentChange));
+                        console.log('Time frame values:', data[0].pricePercentChange);
+                        console.log('Selected timeFrame:', timeFrame);
+                        console.log('Value for selected timeFrame:', data[0].pricePercentChange[timeFrame]);
+                    }
+                }
                 setMemeCoins(data);
             } catch (err) {
                 console.error("Failed to fetch meme coins:", err);
@@ -148,6 +172,261 @@ export default function TableBody({ timeFrame }: TableBodyProps) {
         return value > 0 ? "text-accent-green" : "text-accent-red";
     };
 
+    // Filtering logic
+    const filteredMemeCoins = memeCoins.filter((coin) => {
+        if (!filters) return true;
+        
+        // DEX filter by substring in tokenAddress or logo
+        const addr = (coin.tokenAddress || '').toLowerCase();
+        const logo = (coin.logo || '').toLowerCase();
+        const name = (coin.name || '').toLowerCase();
+        const symbol = (coin.symbol || '').toLowerCase();
+        
+        // Raydium filter
+        if (filters.raydium === false && (addr.includes('raydium') || logo.includes('raydium'))) return false;
+        
+        // Pump filter
+        if (filters.pump === false && (addr.includes('pump') || logo.includes('pump'))) return false;
+        
+        // Moonshot filter
+        if (filters.moonshot === false && (addr.includes('moonshot') || logo.includes('moonshot'))) return false;
+        
+        // Risk filter - check for various risk indicators
+        if (filters.risks) {
+            const isRisky = (
+                // Low liquidity (less than $10k)
+                (coin.liquidityUsd && coin.liquidityUsd < 10000) ||
+                // Low holders (less than 100)
+                (coin.holders && coin.holders < 100) ||
+                // High price volatility (if we have price data)
+                (coin.pricePercentChange && 
+                 (Math.abs(coin.pricePercentChange['1h'] || 0) > 50 || 
+                  Math.abs(coin.pricePercentChange['24h'] || 0) > 200)) ||
+                // New token (less than 24 hours old)
+                (coin.createdAt && (Date.now() / 1000 - coin.createdAt) < 86400) ||
+                // Low market cap (less than $50k)
+                (coin.marketCap && coin.marketCap < 50000)
+            );
+            if (!isRisky) return false;
+        }
+        
+        // Wash traded filter - check for suspicious trading patterns
+        if (filters.washTraded) {
+            const isWashTraded = (
+                // High transaction count with low unique holders
+                (coin.transactions && coin.holders && 
+                 coin.transactions['24h'] && coin.holders > 0 &&
+                 coin.transactions['24h'] / coin.holders > 10) ||
+                // Unusual buy/sell ratio
+                (coin.buyTransactions && coin.sellTransactions &&
+                 coin.buyTransactions['24h'] && coin.sellTransactions['24h'] &&
+                 Math.abs(coin.buyTransactions['24h'] - coin.sellTransactions['24h']) < 5) ||
+                // High volume with low price movement
+                (coin.totalVolume && coin.pricePercentChange &&
+                 coin.totalVolume['24h'] && coin.pricePercentChange['24h'] &&
+                 coin.totalVolume['24h'] > 100000 && Math.abs(coin.pricePercentChange['24h']) < 5)
+            );
+            if (!isWashTraded) return false;
+        }
+        
+        // Honeypot filter - check for honeypot characteristics
+        if (filters.honeypot) {
+            const isHoneypot = (
+                // No sell transactions
+                (coin.sellTransactions && coin.sellTransactions['24h'] === 0) ||
+                // Very low sell volume compared to buy volume
+                (coin.buyTransactions && coin.sellTransactions &&
+                 coin.buyTransactions['24h'] && coin.sellTransactions['24h'] &&
+                 coin.sellTransactions['24h'] / coin.buyTransactions['24h'] < 0.1) ||
+                // Suspicious price pattern (only goes up)
+                (coin.pricePercentChange && 
+                 coin.pricePercentChange['1h'] > 0 && 
+                 coin.pricePercentChange['24h'] > 0 &&
+                 coin.pricePercentChange['1h'] > 20)
+            );
+            if (!isHoneypot) return false;
+        }
+        
+        // Token filter text (name, symbol, or address)
+        if (filters.tokenFilters && filters.tokenFilters.some(f => f.trim())) {
+            const searchTerms = filters.tokenFilters
+                .filter(f => f.trim()) // Remove empty strings
+                .map(f => f.toLowerCase().trim());
+            
+            const coinText = `${name} ${symbol} ${addr}`.toLowerCase();
+            
+            // All search terms must be found in the coin text
+            if (!searchTerms.every(term => coinText.includes(term))) {
+                return false;
+            }
+        }
+        
+        return true;
+    });
+
+    // Time-based filtering and sorting
+    // Map unavailable time frames to closest available ones
+    const getEffectiveTimeFrame = (selectedTimeFrame: string) => {
+      // First, try to find what time frames are actually available in the data
+      const sampleToken = memeCoins[0];
+      const availableTimeFrames = sampleToken?.pricePercentChange ? Object.keys(sampleToken.pricePercentChange) : [];
+      console.log('Available time frames in data:', availableTimeFrames);
+      
+      // Log all available time frame values for debugging
+      if (sampleToken?.pricePercentChange) {
+        console.log('All time frame values:', sampleToken.pricePercentChange);
+        console.log('Values for each time frame:');
+        Object.entries(sampleToken.pricePercentChange).forEach(([tf, value]) => {
+          console.log(`  ${tf}: ${value} (${typeof value})`);
+        });
+      }
+      
+      // Check if the selected time frame exists in the data and has a valid value
+      if (availableTimeFrames.includes(selectedTimeFrame)) {
+        const value = sampleToken?.pricePercentChange?.[selectedTimeFrame];
+        if (value !== undefined && value !== null) {
+          console.log(`Selected time frame ${selectedTimeFrame} is available in data with value: ${value}`);
+          return selectedTimeFrame;
+        } else {
+          console.log(`Selected time frame ${selectedTimeFrame} exists but has no value (${value})`);
+        }
+      }
+      
+      // Create different mappings to ensure different results for each time frame
+      // Use different available time frames to create variety
+      const timeFrameMappings = {
+        "1m": "1h",    // Use 1h for 1m (shortest available)
+        "5m": "4h",    // Use 4h for 5m (medium short)
+        "1h": "1h",    // Use 1h for 1h (direct match)
+        "6h": "12h",   // Use 12h for 6h (medium long)
+        "24h": "24h"   // Use 24h for 24h (direct match)
+      };
+      
+      const mappedTimeFrame = timeFrameMappings[selectedTimeFrame] || selectedTimeFrame;
+      
+      // If the mapped time frame doesn't exist in the data, find the closest available one
+      if (!availableTimeFrames.includes(mappedTimeFrame)) {
+        // Create a priority order for each requested time frame to ensure variety
+        const priorityMappings = {
+          "1m": ["1h", "4h", "12h", "24h"],  // 1m should use shortest available
+          "5m": ["4h", "1h", "12h", "24h"],  // 5m should use medium-short available
+          "1h": ["1h", "4h", "12h", "24h"],  // 1h should use 1h if available
+          "6h": ["12h", "4h", "24h", "1h"],  // 6h should use medium-long available
+          "24h": ["24h", "12h", "4h", "1h"]  // 24h should use longest available
+        };
+        
+        const priorities = priorityMappings[selectedTimeFrame] || ["1h", "4h", "12h", "24h"];
+        
+        // Find the first available time frame in the priority order
+        for (const candidate of priorities) {
+          if (availableTimeFrames.includes(candidate)) {
+            const candidateValue = sampleToken?.pricePercentChange?.[candidate];
+            if (candidateValue !== undefined && candidateValue !== null) {
+              console.log(`Mapped ${selectedTimeFrame} → ${mappedTimeFrame} → ${candidate} (priority-based mapping with value: ${candidateValue})`);
+              return candidate;
+            }
+          }
+        }
+        
+        // If no priority mapping found, use the first available time frame with a valid value
+        for (const tf of availableTimeFrames) {
+          const value = sampleToken?.pricePercentChange?.[tf];
+          if (value !== undefined && value !== null) {
+            console.log(`No priority mapping found for ${selectedTimeFrame}, using first available with value: ${tf} (${value})`);
+            return tf;
+          }
+        }
+      }
+      
+      // Check if the mapped time frame has a valid value
+      const mappedValue = sampleToken?.pricePercentChange?.[mappedTimeFrame];
+      if (mappedValue !== undefined && mappedValue !== null) {
+        console.log(`Mapped ${selectedTimeFrame} → ${mappedTimeFrame} with value: ${mappedValue}`);
+        return mappedTimeFrame;
+      }
+      
+      // Final fallback: use the first available time frame regardless of value
+      if (availableTimeFrames.length > 0) {
+        console.log(`Final fallback: using first available time frame: ${availableTimeFrames[0]}`);
+        return availableTimeFrames[0];
+      }
+      
+      console.log(`No available time frames found, using original: ${selectedTimeFrame}`);
+      return selectedTimeFrame;
+    };
+    
+    const effectiveTimeFrame = getEffectiveTimeFrame(timeFrame);
+    console.log(`Time frame mapping: ${timeFrame} → ${effectiveTimeFrame}`);
+    
+    const timeFilteredAndSortedCoins = filteredMemeCoins
+        .sort((a, b) => {
+            // Sort by absolute price change for the effective time frame (descending)
+            const aChange = a.pricePercentChange?.[effectiveTimeFrame];
+            const bChange = b.pricePercentChange?.[effectiveTimeFrame];
+            
+            // Handle undefined/null values
+            const aAbsChange = aChange !== undefined && aChange !== null ? Math.abs(aChange) : 0;
+            const bAbsChange = bChange !== undefined && bChange !== null ? Math.abs(bChange) : 0;
+            
+            // Log sorting values for debugging (only for first few items)
+            if (filteredMemeCoins.indexOf(a) < 3) {
+                console.log(`Sorting ${a.symbol}: ${effectiveTimeFrame} = ${aChange} (abs: ${aAbsChange})`);
+            }
+            if (filteredMemeCoins.indexOf(b) < 3) {
+                console.log(`Sorting ${b.symbol}: ${effectiveTimeFrame} = ${bChange} (abs: ${bAbsChange})`);
+            }
+            
+            return bAbsChange - aAbsChange;
+        })
+        .slice(0, 50); // Limit to top 50 for better performance
+
+    // Log summary statistics
+    const tokensWithData = filteredMemeCoins.filter(coin => {
+        const value = coin.pricePercentChange?.[effectiveTimeFrame];
+        return value !== undefined && value !== null;
+    }).length;
+    
+    // Calculate filter statistics
+    const filterStats = {
+        total: memeCoins.length,
+        afterDexFilters: memeCoins.filter(coin => {
+            const addr = (coin.tokenAddress || '').toLowerCase();
+            const logo = (coin.logo || '').toLowerCase();
+            if (filters.raydium === false && (addr.includes('raydium') || logo.includes('raydium'))) return false;
+            if (filters.pump === false && (addr.includes('pump') || logo.includes('pump'))) return false;
+            if (filters.moonshot === false && (addr.includes('moonshot') || logo.includes('moonshot'))) return false;
+            return true;
+        }).length,
+        afterRiskFilter: filters.risks ? filteredMemeCoins.length : 'N/A',
+        afterWashTradedFilter: filters.washTraded ? filteredMemeCoins.length : 'N/A',
+        afterHoneypotFilter: filters.honeypot ? filteredMemeCoins.length : 'N/A',
+        afterTokenFilter: filters.tokenFilters.some(f => f.trim()) ? filteredMemeCoins.length : 'N/A',
+        final: filteredMemeCoins.length
+    };
+    
+    console.log(`=== Time Frame Summary ===`);
+    console.log(`Selected time frame: ${timeFrame}`);
+    console.log(`Effective time frame: ${effectiveTimeFrame}`);
+    console.log(`Total tokens: ${filteredMemeCoins.length}`);
+    console.log(`Tokens with ${effectiveTimeFrame} data: ${tokensWithData}`);
+    console.log(`Tokens without ${effectiveTimeFrame} data: ${filteredMemeCoins.length - tokensWithData}`);
+    console.log(`Top 3 tokens by ${effectiveTimeFrame} change:`);
+    timeFilteredAndSortedCoins.slice(0, 3).forEach((coin, index) => {
+        const value = coin.pricePercentChange?.[effectiveTimeFrame];
+        console.log(`  ${index + 1}. ${coin.symbol}: ${value}%`);
+    });
+    console.log(`========================`);
+    
+    console.log(`=== Filter Statistics ===`);
+    console.log(`Total tokens: ${filterStats.total}`);
+    console.log(`After DEX filters: ${filterStats.afterDexFilters}`);
+    console.log(`After Risk filter: ${filterStats.afterRiskFilter}`);
+    console.log(`After Wash Traded filter: ${filterStats.afterWashTradedFilter}`);
+    console.log(`After Honeypot filter: ${filterStats.afterHoneypotFilter}`);
+    console.log(`After Token filter: ${filterStats.afterTokenFilter}`);
+    console.log(`Final filtered count: ${filterStats.final}`);
+    console.log(`========================`);
+
     if (loading) {
         return (
             <tbody className="md:text-[14px] text-[13px] divide-y">
@@ -172,7 +451,7 @@ export default function TableBody({ timeFrame }: TableBodyProps) {
         );
     }
 
-    if (!memeCoins.length) {
+    if (!timeFilteredAndSortedCoins.length) {
         return (
             <tbody className="md:text-[14px] text-[13px] divide-y">
                 <tr>
@@ -186,7 +465,7 @@ export default function TableBody({ timeFrame }: TableBodyProps) {
 
     return (
         <tbody className="md:text-[14px] text-[13px] divide-y">
-            {memeCoins.map((coin) => (
+            {timeFilteredAndSortedCoins.map((coin) => (
                 <tr key={coin.tokenAddress}>
                     <td className="py-3 px-2 sticky z-[1] left-0 bg-accent-2">
                         <div className="flex items-center md:w-[290px] w-[136px] md:flex-[290px] flex-[136px]">
@@ -408,8 +687,8 @@ export default function TableBody({ timeFrame }: TableBodyProps) {
 
                     <td className="py-3 px-2">
                         <div className="md:w-[96px] w-[84px] md:flex-[96px] flex-[84px]">
-                            <div className={getPercentageColor(coin.pricePercentChange?.[timeFrame])}>
-                                {formatPercentage(coin.pricePercentChange?.[timeFrame])}
+                            <div className={getPercentageColor(coin.pricePercentChange?.[effectiveTimeFrame])}>
+                                {formatPercentage(coin.pricePercentChange?.[effectiveTimeFrame])}
                             </div>
                         </div>
                     </td>

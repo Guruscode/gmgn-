@@ -9,6 +9,15 @@ export default function Trending() {
     const searchParams = useSearchParams();
     const [switchTabs, setSwitch] = useState('1'); // Default to '1'
     const [timeFrame, setTimeFrame] = useState('1m'); // Default to '1m'
+    const [filters, setFilters] = useState({
+        raydium: true,
+        pump: true,
+        moonshot: true,
+        risks: false,
+        washTraded: false,
+        honeypot: false,
+        tokenFilters: ["", "", "", "", ""]
+    });
 
     useEffect(() => {
         // Initialize from search params (client-side only)
@@ -34,11 +43,14 @@ export default function Trending() {
     const handleTimeFrameChange = (newTimeFrame) => {
         setTimeFrame(newTimeFrame);
     };
+    const handleFiltersChange = (newFilters) => {
+        setFilters(newFilters);
+    };
 
     return (
         <div className='h-[90vh] overflow-hidden'>
-            <UtilityBar setSwitch={setSwitch} switchTabs={switchTabs} onTimeFrameChange={handleTimeFrameChange} />
-            <Table timeFrame={timeFrame} />
+            <UtilityBar setSwitch={setSwitch} switchTabs={switchTabs} onTimeFrameChange={handleTimeFrameChange} onFiltersChange={handleFiltersChange} />
+            <Table timeFrame={timeFrame} filters={filters} />
             <Footer />
         </div>
     );

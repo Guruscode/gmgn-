@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Copy, Coins } from "lucide-react";
-import { useAccount } from "wagmi";
+import { useWallet } from '@solana/wallet-adapter-react';
 import { usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
@@ -56,7 +56,7 @@ export default function DiagonalCommissionChart() {
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [referredUsers, setReferredUsers] = useState<ReferredUser[]>([]);
   const [totalEarnings, setTotalEarnings] = useState(0);
-  const { isConnected, address } = useAccount();
+  const { connected, publicKey } = useWallet();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const chain = searchParams.get("chain") || "sol";
@@ -74,11 +74,11 @@ export default function DiagonalCommissionChart() {
       setCurrentIndex((prev) => (prev + 1) % commissionData.length);
     }, 2000);
     return () => clearInterval(interval);
-  }, []);
+  }, [commissionData.length]);
 
   useEffect(() => {
-    if (isConnected && address) {
-      fetch(`/api/referrals?address=${address}`)
+    if (connected && publicKey) {
+      fetch(`/api/referrals?address=${publicKey.toBase58()}`)
         .then((res) => res.json())
         .then(async (data) => {
           let code = data.user?.referral_code;
@@ -87,7 +87,7 @@ export default function DiagonalCommissionChart() {
             await fetch("/api/referrals", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ referrer_code: refCode || null, referred_address: address, new_referral_code: code }),
+              body: JSON.stringify({ referrer_code: refCode || null, referred_address: publicKey.toBase58(), new_referral_code: code }),
             })
               .then((res) => res.json())
               .then((data) => {
@@ -110,7 +110,7 @@ export default function DiagonalCommissionChart() {
       setReferredUsers([]);
       setTotalEarnings(0);
     }
-  }, [isConnected, address, refCode]);
+  }, [connected, publicKey, refCode]);
 
   const currentCommission = commissionData[currentIndex];
   const curveStart = getPointOnCurve(0);
@@ -162,7 +162,7 @@ export default function DiagonalCommissionChart() {
           <span className="text-gray-400 text-xs">Gem 100X - GMGN</span>
         </div>
         <div className="bg-gray-800 rounded px-2 py-1 text-xs text-gray-300 font-mono">
-          gmgn.ai/eth/token/<span className="text-red-400">xxxxxxxx</span>_0x123
+          nordicx.io/eth/token/<span className="text-red-400">xxxxxxxx</span>_0x123
         </div>
       </div>
       <button className="bg-gray-700 hover:bg-gray-600 text-white rounded-lg py-2 px-4 text-sm transition-colors">
@@ -192,7 +192,7 @@ export default function DiagonalCommissionChart() {
   return (
     <div className="w-full min-h-screen">
       <div className="lg:hidden flex flex-col">
-        {isConnected && referralCode && <ReferralCard />}
+        {connected && referralCode && <ReferralCard />}
         <div className="relative h-[500px] p-4">
           <div className="mb-6">
             <h2 className="text-xl font-normal mb-4 leading-relaxed text-gray-200">
@@ -290,7 +290,7 @@ export default function DiagonalCommissionChart() {
         </div>
       </div>
       <div className="hidden lg:flex h-[600px] relative overflow-hidden gap-6">
-        {isConnected && referralCode && (
+        {connected && referralCode && (
           <div className="order-last">
             <ReferralCard />
           </div>

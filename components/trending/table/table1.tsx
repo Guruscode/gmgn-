@@ -2,18 +2,29 @@ import TableBody from "./body";
 import TableHead from "./head";
 import Colgroup from "./colgroup";
 
-interface TableProps {
-    timeFrame: string;
+interface Filters {
+    raydium: boolean;
+    pump: boolean;
+    moonshot: boolean;
+    risks: boolean;
+    washTraded: boolean;
+    honeypot: boolean;
+    tokenFilters: string[];
 }
 
-export default function Table({ timeFrame }: TableProps) {
+interface TableProps {
+    timeFrame: string;
+    filters: Filters;
+}
+
+export default function Table({ timeFrame, filters }: TableProps) {
     return (
         <div className='w-full md:px-[1.3rem] h-[781px] gap-5 overflow-y-auto relative pb-[50px]'>
             <div className="relative overflow-auto h-full">
                 <table className="bg-accent-2">
                     <Colgroup />
                     <TableHead />
-                    <TableBody timeFrame={timeFrame} />
+                    <TableBody timeFrame={timeFrame} filters={filters} />
                 </table>
             </div>
         </div >

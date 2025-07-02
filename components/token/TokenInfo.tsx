@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { Pair } from "@/lib/tokenTypes";
 import Image from 'next/image';
 import { copyToClipboard, truncAddress, formatNumber, formatPercentage } from '@/lib/utils';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { Connection } from '@solana/web3.js';
 
 interface PairToken {
   tokenSymbol: string;
@@ -101,6 +103,8 @@ const TokenInfo: React.FC<TokenSnipersProps> = ({ token, pair, chainId }) => {
   const [amount, setAmount] = useState(0);
   const [amountPercentage, setAmountPercentage] = useState(0);
   const [isAutoEnabled, setIsAutoEnabled] = useState(false);
+  const { publicKey, connected } = useWallet();
+  const [solBalance, setSolBalance] = useState<string>("--");
 
   const timeFrameMap: Record<string, string> = {
     "5m": "5min",
@@ -324,6 +328,25 @@ const TokenInfo: React.FC<TokenSnipersProps> = ({ token, pair, chainId }) => {
     fetchPoolInfo();
   }, [pair, chainId, token, tokenMetadata, pairStats]);
 
+  // Solana wallet balance logic
+  useEffect(() => {
+    if (chainId !== "solana") return;
+    const fetchBalance = async () => {
+      if (publicKey) {
+        try {
+          const connection = new Connection('https://rpc.shyft.to?api_key=u2aRZTkbFQrJy-Us');
+          const balance = await connection.getBalance(publicKey);
+          setSolBalance((balance / 1e9).toFixed(2));
+        } catch {
+          setSolBalance("--");
+        }
+      } else {
+        setSolBalance("--");
+      }
+    };
+    fetchBalance();
+  }, [publicKey, connected, chainId]);
+
   const getTimePeriodData = (period: string) => {
     const apiPeriod = timeFrameMap[period] || "24h";
 
@@ -538,9 +561,11 @@ const TokenInfo: React.FC<TokenSnipersProps> = ({ token, pair, chainId }) => {
                 <button className="flex-1 mx-2 py-1.5 bg-[#1e1e24] rounded text-sm">
                   Buy Dip
                 </button>
-                <button className="flex-1 ml-2 py-1.5 bg-[#1e1e24] rounded text-sm">
-                  Bai:--{quoteToken}
-                </button>
+                {isSolana && (
+                  <div className="flex-1 ml-2 py-1.5 bg-[#1e1e24] rounded text-sm flex items-center justify-center">
+                    Bal: {solBalance} SOL
+                  </div>
+                )}
               </div>
 
               {/* Amount Selection */}

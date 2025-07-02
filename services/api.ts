@@ -37,14 +37,103 @@ export const getTrendingTokens = async (chain = "", limit = 100) => {
   }
 };
 
-export const getTrendingMemeCoins = async (chain = "", limit = 100) => {
+export const getTrendingMemeCoins = async (chain = "", limit = 100, timeFrame = "24h") => {
   try {
     if (!API_KEY) {
       throw new Error("API key is not defined");
     }
 
     const chainParam = chain ? `&chain=${chain}` : "";
-    const url = `${MEME_COINS_API_URL}/trending?limit=${limit}${chainParam}`;
+    
+    // Try different API approaches for time-based data
+    let url;
+    
+    // Approach 1: Try different parameter names
+    if (timeFrame && timeFrame !== "24h") {
+      // Convert time frame to different formats the API might expect
+      const timeFrameFormats = {
+        "1m": ["1m", "1", "60", "60s", "1min"],
+        "5m": ["5m", "5", "300", "300s", "5min"],
+        "1h": ["1h", "1h", "3600", "3600s", "60min"],
+        "6h": ["6h", "6h", "21600", "21600s", "360min"],
+        "24h": ["24h", "24h", "86400", "86400s", "1440min"]
+      };
+      
+      const formatsToTry = timeFrameFormats[timeFrame] || [timeFrame];
+      
+      // Try various parameter names that APIs commonly use
+      const timeParams = [
+        `&timeframe=${timeFrame}`,
+        `&period=${timeFrame}`,
+        `&interval=${timeFrame}`,
+        `&time_period=${timeFrame}`,
+        `&window=${timeFrame}`
+      ];
+      
+      // Try each parameter with different time frame formats
+      for (const param of timeParams) {
+        for (const format of formatsToTry) {
+          try {
+            const testUrl = `${MEME_COINS_API_URL}/trending?limit=${limit}${chainParam}${param.replace(timeFrame, format)}`;
+            console.log("Trying API URL:", testUrl);
+            
+            const testResponse = await fetch(testUrl, {
+              headers: new Headers({
+                accept: "application/json",
+                "X-API-Key": API_KEY,
+              }),
+            });
+            
+            if (testResponse.ok) {
+              const testData = await testResponse.json();
+              if (testData && testData.length > 0) {
+                console.log(`Success with parameter: ${param} and format: ${format}`);
+                url = testUrl;
+                break;
+              }
+            }
+          } catch (e) {
+            console.log(`Failed with parameter: ${param} and format: ${format}`, e);
+          }
+        }
+        if (url) break;
+      }
+      
+      // If no format worked, try the original approach
+      if (!url) {
+        for (const param of timeParams) {
+          try {
+            const testUrl = `${MEME_COINS_API_URL}/trending?limit=${limit}${chainParam}${param}`;
+            console.log("Trying API URL:", testUrl);
+            
+            const testResponse = await fetch(testUrl, {
+              headers: new Headers({
+                accept: "application/json",
+                "X-API-Key": API_KEY,
+              }),
+            });
+            
+            if (testResponse.ok) {
+              const testData = await testResponse.json();
+              if (testData && testData.length > 0) {
+                console.log(`Success with parameter: ${param}`);
+                url = testUrl;
+                break;
+              }
+            }
+          } catch (e) {
+            console.log(`Failed with parameter: ${param}`, e);
+          }
+        }
+      }
+    }
+    
+    // If no time-based approach worked, use the default
+    if (!url) {
+      url = `${MEME_COINS_API_URL}/trending?limit=${limit}${chainParam}`;
+    }
+
+    console.log("Final API URL:", url);
 
     const headers = new Headers({
       accept: "application/json",
@@ -58,6 +147,7 @@ export const getTrendingMemeCoins = async (chain = "", limit = 100) => {
     }
 
     const data = await response.json();
+    console.log("API Response:", data.length, "tokens");
     return Array.isArray(data) ? data : data.result || [];
   } catch (error) {
     console.error("Error fetching trending meme coins:", error);
