@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { useAccount } from "wagmi";
+import { useWallet } from '@solana/wallet-adapter-react';
 
 /***
  *
@@ -21,7 +21,7 @@ export default function Page({ params }) {
   const [switchCurrency, setSwitchCurrency] = useState("USD");
   const currentCurrency = params?.chain;
   const [tableTableSwitch, setTableTabSwitch] = useState("1");
-  const { isConnected, isConnecting, isReconnecting, address, chain } = useAccount();
+  const { connected, publicKey } = useWallet();
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
 
@@ -33,26 +33,22 @@ export default function Page({ params }) {
   // Log connection status for debugging
   useEffect(() => {
     console.log({
-      isConnected,
-      isConnecting,
-      isReconnecting,
-      address,
-      chain: chain?.name,
-      chainId: chain?.id,
+      connected,
+      publicKey,
       isClient,
     });
-  }, [isConnected, isConnecting, isReconnecting, address, chain, isClient]);
+  }, [connected, publicKey, isClient]);
 
   // Redirect to homepage if wallet is not connected
   useEffect(() => {
-    if (isClient && !isConnecting && !isReconnecting && !isConnected) {
+    if (isClient && !connected) {
       console.log("Redirecting to / because wallet is not connected");
       router.push("/");
     }
-  }, [isClient, isConnected, isConnecting, isReconnecting, router]);
+  }, [isClient, connected, router]);
 
   // Show loading state during SSR, connecting, or reconnecting
-  if (!isClient || isConnecting || isReconnecting) {
+  if (!isClient || !connected) {
     return (
       <div className="p-4 text-white flex items-center justify-center min-h-screen">
         Loading wallet connection...
@@ -61,7 +57,7 @@ export default function Page({ params }) {
   }
 
   // Prevent rendering until redirect if not connected
-  if (!isConnected) {
+  if (!connected) {
     return null;
   }
   return (
@@ -206,8 +202,8 @@ export default function Page({ params }) {
               color="#C4CCCC"
             >
               <path
-                fill-rule="evenodd"
-                clip-rule="evenodd"
+                fillRule="evenodd"
+                clipRule="evenodd"
                 d="M7.71472 3C4.94517 3 2.70001 5.24516 2.70001 8.01471C2.70001 10.7843 4.94517 13.0294 7.71472 13.0294C10.4843 13.0294 12.7294 10.7843 12.7294 8.01471C12.7294 7.60049 13.0652 7.26471 13.4794 7.26471C13.8936 7.26471 14.2294 7.60049 14.2294 8.01471C14.2294 11.6127 11.3127 14.5294 7.71472 14.5294C4.11675 14.5294 1.20001 11.6127 1.20001 8.01471C1.20001 4.41673 4.11675 1.5 7.71472 1.5C9.51241 1.5 11.1396 2.2284 12.3177 3.4046V2.25C12.3177 1.83579 12.6534 1.5 13.0677 1.5C13.4819 1.5 13.8177 1.83579 13.8177 2.25V5.54412C13.8177 5.95833 13.4819 6.29412 13.0677 6.29412H9.77354C9.35933 6.29412 9.02354 5.95833 9.02354 5.54412C9.02354 5.1299 9.35933 4.79412 9.77354 4.79412H11.5588C10.6382 3.69637 9.25751 3 7.71472 3Z"
               ></path>
             </svg>
@@ -416,10 +412,10 @@ export default function Page({ params }) {
                 xmlns="http://www.w3.org/2000/svg"
                 fill="currentColor"
               >
-                <g clip-path="url(#42clip0_9738_1914)">
+                <g clipPath="url(#42clip0_9738_1914)">
                   <path
-                    fill-rule="evenodd"
-                    clip-rule="evenodd"
+                    fillRule="evenodd"
+                    clipRule="evenodd"
                     d="M8.29866 9.68576C6.80431 9.81526 4.35783 9.39263 2.69856 7.73336C0.378749 5.41355 0.632053 1.39908 1.12015 0.910985C1.60825 0.422885 5.62272 0.169582 7.94253 2.48939C9.60176 4.14862 10.0244 6.59503 9.89494 8.0894C10.7787 8.00941 11.9185 8.14177 12.6345 8.85771C13.089 9.31221 13.3231 9.92271 13.4152 10.5319C12.6423 10.5118 11.6192 10.9819 11.4052 11.1959C11.1912 11.4099 10.721 12.433 10.7411 13.206C10.132 13.1138 9.52149 12.8797 9.06699 12.4252C8.35107 11.7093 8.21869 10.5695 8.29866 9.68576ZM3.52857 3.31938C3.22432 3.62363 2.73103 3.62363 2.42677 3.31938C2.12252 3.01513 2.12252 2.52184 2.42677 2.21758C2.73103 1.91333 3.22432 1.91333 3.52857 2.21758C3.83282 2.52184 3.83282 3.01513 3.52857 3.31938Z"
                   ></path>
                 </g>
@@ -608,7 +604,6 @@ function Table1() {
         <col />
         <col />
       </colgroup>
-
       <thead className="whitespace-nowrap border-b-2">
         <tr className="text-[#c2cccc] font-[300] bg-accent-2 text-[12px] z-[10] sticky top-0">
           <th className="font-[400] py-3 px-2 sticky top-0 left-0 z-10 bg-accent-2">
@@ -846,15 +841,20 @@ function Table1() {
           </th>
         </tr>
       </thead>
-
-      <div className="w-full absolute h-[250px] bg-accent-2 flex items-center justify-center">
-        <div className=" flex flex-col items-center gap-1">
-          <Image src={"/nodata.svg"} width={70} height={70} alt="no data" />
-          <p className="text-accent-aux-1 text-[14px]">
-            No buying or selling in the last 30 days.
-          </p>
-        </div>
-      </div>
+      <tbody>
+        <tr>
+          <td colSpan={9}>
+            <div className="w-full h-[250px] bg-accent-2 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-1">
+                <Image src={"/nodata.svg"} width={70} height={70} alt="no data" />
+                <p className="text-accent-aux-1 text-[14px]">
+                  No buying or selling in the last 30 days.
+                </p>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
     </>
   );
 }
@@ -872,7 +872,6 @@ function Table2() {
         <col />
         <col />
       </colgroup>
-
       <thead className="whitespace-nowrap border-b-2">
         <tr className="text-[#c2cccc] font-[300] bg-accent-2 text-[12px] z-[10] sticky top-0">
           <th className="font-[400] py-3 px-2 sticky top-0 left-0 z-10 bg-accent-2">
@@ -1083,13 +1082,18 @@ function Table2() {
           </th>
         </tr>
       </thead>
-
-      <div className="w-full absolute h-[250px] bg-accent-2 flex items-center justify-center">
-        <div className=" flex flex-col items-center gap-1">
-          <Image src={"/nodata.svg"} width={70} height={70} alt="no data" />
-          <p className="text-accent-aux-1 text-[14px]">No assets held.</p>
-        </div>
-      </div>
+      <tbody>
+        <tr>
+          <td colSpan={8}>
+            <div className="w-full h-[250px] bg-accent-2 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-1">
+                <Image src={"/nodata.svg"} width={70} height={70} alt="no data" />
+                <p className="text-accent-aux-1 text-[14px]">No assets held.</p>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
     </>
   );
 }
@@ -1106,7 +1110,6 @@ function Table3() {
         <col />
         <col />
       </colgroup>
-
       <thead className="whitespace-nowrap border-b-2">
         <tr className="text-[#c2cccc] font-[300] bg-accent-2 text-[12px] z-[10] sticky top-0">
           <th className="font-[400] py-3 px-2 sticky top-0 left-0 z-10 bg-accent-2">
@@ -1209,13 +1212,18 @@ function Table3() {
           </th>
         </tr>
       </thead>
-
-      <div className="w-full absolute h-[250px] bg-accent-2 flex items-center justify-center">
-        <div className=" flex flex-col items-center gap-1">
-          <Image src={"/nodata.svg"} width={70} height={70} alt="no data" />
-          <p className="text-accent-aux-1 text-[14px]">No Data</p>
-        </div>
-      </div>
+      <tbody>
+        <tr>
+          <td colSpan={7}>
+            <div className="w-full h-[250px] bg-accent-2 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-1">
+                <Image src={"/nodata.svg"} width={70} height={70} alt="no data" />
+                <p className="text-accent-aux-1 text-[14px]">No Data</p>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
     </>
   );
 }
@@ -1232,7 +1240,6 @@ function Table4() {
         <col />
         <col />
       </colgroup>
-
       <thead className="whitespace-nowrap border-b-2">
         <tr className="text-[#c2cccc] font-[300] bg-accent-2 text-[12px] z-[10] sticky top-0">
           <th className="font-[400] py-3 px-2 sticky top-0 left-0 z-10 bg-accent-2">
@@ -1270,13 +1277,18 @@ function Table4() {
           </th>
         </tr>
       </thead>
-
-      <div className="w-full absolute h-[250px] bg-accent-2 flex items-center justify-center">
-        <div className=" flex flex-col items-center gap-1">
-          <Image src={"/nodata.svg"} width={70} height={70} alt="no data" />
-          <p className="text-accent-aux-1 text-[14px]">No Data</p>
-        </div>
-      </div>
+      <tbody>
+        <tr>
+          <td colSpan={7}>
+            <div className="w-full h-[250px] bg-accent-2 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-1">
+                <Image src={"/nodata.svg"} width={70} height={70} alt="no data" />
+                <p className="text-accent-aux-1 text-[14px]">No Data</p>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
     </>
   );
 }

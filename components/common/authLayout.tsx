@@ -1,9 +1,9 @@
 'use client';
 import Image from 'next/image';
 import Link from 'next/link';
-import React, { useState } from 'react';
-import { useAccount } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import React, { useState, useEffect } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 
 export default function AuthLayout({
   setAuthModal,
@@ -14,9 +14,12 @@ export default function AuthLayout({
 }) {
   const [isModal, setAuthModalOpt] = useState(showAuth);
   setAuthModal = typeof setAuthModal == 'undefined' ? setAuthModalOpt : setAuthModal;
-  const { isConnected } = useAccount();
+  const { connected } = useWallet();
+  const [isClient, setIsClient] = useState(false);
+  const { setVisible } = useWalletModal();
+  useEffect(() => { setIsClient(true); }, []);
 
-  if (isConnected) return null;
+  if (connected) return null;
 
   return (
     <div className={`font-system ${isModal ? 'flex' : 'hidden'} fixed text-[rgb(41,44,51)] dark:text-[#f4f4f5] bg-[#f4f4f5]/95 dark:bg-[#111111]/95 w-screen z-[1500] inset-0 h-screen items-center justify-center`}>
@@ -34,7 +37,10 @@ export default function AuthLayout({
         </div>
 
         <div className="flex flex-col justify-center items-center mt-[36px]">
-          <button className="button-brand max-w-[284px] w-full min-w-[2.5rem] inline-flex gap-[8px] rounded-[8px] justify-center items-center font-[600] px-[52px] h-[48px] whitespace-nowrap select-none">
+          <button 
+            className="button-brand max-w-[284px] w-full min-w-[2.5rem] inline-flex gap-[8px] rounded-[8px] justify-center items-center font-[600] px-[52px] h-[48px] whitespace-nowrap select-none"
+            onClick={() => window.open('https://t.me/nordicxio_bot?start=login', '_blank')}
+          >
             <svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" fill="currentColor" viewBox="0 0 12 12">
               <g clipPath="url(#clip0_7920_515)">
                 <path d="M11.894 1.91l-1.8 8.487c-.134.6-.49.746-.992.465L6.36 8.842l-1.322 1.273c-.147.147-.27.27-.551.27l.196-2.793L9.764 3c.22-.196-.05-.307-.344-.11L3.138 6.844.43 6c-.588-.183-.6-.588.122-.869l10.582-4.078c.49-.183.918.11.76.857z"></path>
@@ -48,8 +54,31 @@ export default function AuthLayout({
             Connect Telegram
           </button>
 
+          {isClient && (
+            <div className="mt-4">
+              <button
+                onClick={() => setVisible(true)}
+                className="bg-gradient-to-br text-white font-[600] max-w-[284px] w-full min-w-[2.5rem] inline-flex gap-[8px] rounded-[8px] justify-center items-center px-[52px] h-[48px] whitespace-nowrap select-none hover:opacity-90 transition"
+              >
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  width="20px" 
+                  height="20px" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                >
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+                Or Sign In With Wallet →
+              </button>
+            </div>
+          )}
+
           {/* Custom ConnectButton */}
-          <ConnectButton.Custom>
+          {/* <ConnectButton.Custom>
             {({
               account,
               chain,
@@ -103,8 +132,9 @@ export default function AuthLayout({
                 </div>
               );
             }}
-          </ConnectButton.Custom>
-{/* 
+          </ConnectButton.Custom> */}
+
+          {/* 
           <div className="flex justify-center text-[#6E727D] dark:text-[#9AA0AA] text-[14px] font-[500] leading-[21px] mt-[16px] w-full items-center gap-[4px]">
             Or Sign In With Wallet
             <svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" fill="currentColor" viewBox="0 0 12 12">
