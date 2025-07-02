@@ -3,8 +3,8 @@ import { Metadata } from 'next';
 import { Suspense } from 'react'
 
 export const metadata: Metadata = {
-  title: "Pump Rank - GMGN.AI Fast Trade, Fast Copy Trade, Fast AFK Automation.",
-  description: "GMGN.AI Fast Trade, Fast Copy Trade, Fast AFK Automation",
+  title: "Pump Rank - NordicX.io Fast Trade, Fast Copy Trade, Fast AFK Automation.",
+  description: "NordicX.io Fast Trade, Fast Copy Trade, Fast AFK Automation",
 };
 
 export default function Page() {
