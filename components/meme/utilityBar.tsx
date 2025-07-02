@@ -19,7 +19,16 @@ import {
 } from "@/components/ui/sheet";
 import { updateUrlParams } from "@/lib/utils";
 
-export default function UtilityBar({ setSwitch, switchTabs }) {
+interface UtilityBarProps {
+    setSwitch: React.Dispatch<React.SetStateAction<string>>;
+    switchTabs: string;
+    tokenFilters: string[];
+    onTokenFilterChange: (idx: number, value: string) => void;
+    washTraded: boolean;
+    onWashTradedChange: (checked: boolean) => void;
+}
+
+export default function UtilityBar({ setSwitch, switchTabs, tokenFilters, onTokenFilterChange, washTraded, onWashTradedChange }: UtilityBarProps) {
     const paramSearch = useSearchParams();
     const getMemeTab = useCallback(() => paramSearch.get("tab"), [paramSearch]);
 
@@ -105,8 +114,9 @@ export default function UtilityBar({ setSwitch, switchTabs }) {
 
                 <div className="w-full flex md:flex-nowrap flex-wrap gap-3">
                     {/* pump tab */}
-                    {switchTabs == 1 && <div className="flex items-center gap-2">
+                    {switchTabs === "1" && <div className="flex items-center gap-2">
                         <div className="bg-transparent rounded-[8px] inline-flex items-center flex-wrap">
+                            {/*
                             <div
                                 onClick={() => {
                                     updateUrlParams({ tab: "home" });
@@ -204,7 +214,7 @@ export default function UtilityBar({ setSwitch, switchTabs }) {
                                             fill="#128B4B"
                                         ></rect>
                                         <path
-                                            d="M6 8V7H5v1H4v1H3v1H2v3h1v1h1v-1h1v-1h1v-1h1v-1h1V9H7V8H6z"
+                                            d="M6 8V7H5v1H4v1H3v1H2v3h1v1h1v-1h1v-1h1v-1h1V9H7V8H6z"
                                             fill="#52D48F"
                                         ></path>
                                         <rect
@@ -327,11 +337,12 @@ export default function UtilityBar({ setSwitch, switchTabs }) {
                                     ></path>
                                 </svg>
                             </a>
+                            */}
                         </div>
                     </div>}
 
                     {/* moonshot */}
-                    {switchTabs == 2 && <div className="bg-transparent rounded-[8px] inline-flex items-center flex-wrap">
+                    {switchTabs === "2" && <div className="bg-transparent rounded-[8px] inline-flex items-center flex-wrap">
                         <div
                             onClick={() => {
                                 updateUrlParams({ tab: "home" });
@@ -413,6 +424,8 @@ export default function UtilityBar({ setSwitch, switchTabs }) {
                                         name="filter-1"
                                         className="outline-none border capitalize font-normal dark:bg-transparent text-[14px] px-1 py-1 rounded-md w-full focus:border-[#111111] hover:border-[#111111]"
                                         placeholder="filter 1"
+                                        value={tokenFilters[0]}
+                                        onChange={e => onTokenFilterChange(0, e.target.value)}
                                     />
                                 </div>
                                 <div className="">
@@ -421,6 +434,8 @@ export default function UtilityBar({ setSwitch, switchTabs }) {
                                         name="filter-2"
                                         className="outline-none border capitalize font-normal dark:bg-transparent text-[14px] px-1 py-1 rounded-md w-full focus:border-[#111111] hover:border-[#111111]"
                                         placeholder="filter 2"
+                                        value={tokenFilters[1]}
+                                        onChange={e => onTokenFilterChange(1, e.target.value)}
                                     />
                                 </div>
                                 <div className="">
@@ -429,6 +444,8 @@ export default function UtilityBar({ setSwitch, switchTabs }) {
                                         name="filter-3"
                                         className="outline-none border capitalize font-normal dark:bg-transparent text-[14px] px-1 py-1 rounded-md w-full focus:border-[#111111] hover:border-[#111111]"
                                         placeholder="filter 3"
+                                        value={tokenFilters[2]}
+                                        onChange={e => onTokenFilterChange(2, e.target.value)}
                                     />
                                 </div>
                                 <div className="">
@@ -437,6 +454,8 @@ export default function UtilityBar({ setSwitch, switchTabs }) {
                                         name="filter-4"
                                         className="outline-none border capitalize font-normal dark:bg-transparent text-[14px] px-1 py-1 rounded-md w-full focus:border-[#111111] hover:border-[#111111]"
                                         placeholder="filter 4"
+                                        value={tokenFilters[3]}
+                                        onChange={e => onTokenFilterChange(3, e.target.value)}
                                     />
                                 </div>
                                 <div className="">
@@ -445,6 +464,8 @@ export default function UtilityBar({ setSwitch, switchTabs }) {
                                         name="filter-5"
                                         className="outline-none border capitalize font-normal dark:bg-transparent text-[14px] px-1 py-1 rounded-md w-full focus:border-[#111111] hover:border-[#111111]"
                                         placeholder="filter 5"
+                                        value={tokenFilters[4]}
+                                        onChange={e => onTokenFilterChange(4, e.target.value)}
                                     />
                                 </div>
                             </div>
@@ -461,7 +482,7 @@ export default function UtilityBar({ setSwitch, switchTabs }) {
                     </DropdownMenu>
                     <div className="flex items-center flex-wrap lg:flex-nowrap w-full gap-2">
                         <div className="flex items-center gap-1">
-                            <Checkbox id="filter wash traded" />
+                            <Checkbox id="filter wash traded" checked={washTraded} onCheckedChange={onWashTradedChange} />
                             <label
                                 htmlFor="filter wash traded"
                                 className="text-[12px] cursor-pointer leading-[1] text-left capitalized"

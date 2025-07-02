@@ -27,6 +27,8 @@ const PumpFunPage: React.FC = () => {
   const [newTokensIds, setNewTokensIds] = useState<Set<string>>(new Set());
   const pollingInterval = useRef<NodeJS.Timeout | null>(null);
   const [switchTabs, setSwitch] = useState('1');
+  const [tokenFilters, setTokenFilters] = useState(["", "", "", "", ""]);
+  const [washTraded, setWashTraded] = useState(false);
 
   // Fetch tokens using useCallback to avoid dependency warnings
   const fetchNewTokens = useCallback(async () => {
@@ -184,9 +186,60 @@ const PumpFunPage: React.FC = () => {
     </div>
   );
 
+  // Handler for updating token filter inputs
+  const handleTokenFilterChange = (idx: number, value: string) => {
+    setTokenFilters((prev) => {
+      const updated = [...prev];
+      updated[idx] = value;
+      return updated;
+    });
+  };
+
+  // Handler for wash traded checkbox
+  const handleWashTradedChange = (checked: boolean) => {
+    setWashTraded(checked);
+  };
+
+  // Filtering logic (similar to trending)
+  const filterTokens = (tokens: Token[]) => {
+    return tokens.filter(token => {
+      // Token filter: match all non-empty search terms in name, symbol, or address
+      if (tokenFilters.some(f => f.trim())) {
+        const searchTerms = tokenFilters.filter(f => f.trim()).map(f => f.toLowerCase());
+        const tokenText = `${token.name || ''} ${token.symbol || ''} ${token.tokenAddress || ''}`.toLowerCase();
+        if (!searchTerms.every(term => tokenText.includes(term))) {
+          return false;
+        }
+      }
+      // Wash traded filter: high transaction/holder ratio (if available)
+      if (washTraded) {
+        // Example logic: if token.transactions and token.holders exist
+        const tx = typeof token.transactions === 'number' ? token.transactions : (token.transactions && token.transactions['24h']);
+        const holders = typeof token.holders === 'number' ? token.holders : undefined;
+        if (tx && holders && holders > 0 && tx / holders > 10) {
+          return true;
+        }
+        // If not enough data, hide token
+        return false;
+      }
+      return true;
+    });
+  };
+
+  const filteredNewTokens = filterTokens(newTokens);
+  const filteredBondingTokens = filterTokens(bondingTokens);
+  const filteredGraduatedTokens = filterTokens(graduatedTokens);
+
   return (
     <div className="bg-accent-2 text-white min-h-screen">
-      <UtilityBar setSwitch={setSwitch} switchTabs={switchTabs} />
+      <UtilityBar
+        setSwitch={setSwitch}
+        switchTabs={switchTabs}
+        tokenFilters={tokenFilters}
+        onTokenFilterChange={handleTokenFilterChange}
+        washTraded={washTraded}
+        onWashTradedChange={handleWashTradedChange}
+      />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-0 max-w-full mx-auto">
         {/* New Tokens Column */}
         <div className="border border-gray-800 bg-accent-2 m-4 rounded-lg">
@@ -201,7 +254,7 @@ const PumpFunPage: React.FC = () => {
                 {error}
               </div>
             ) : (
-              newTokens.map((token) => (
+              filteredNewTokens.map((token) => (
                 <NewTokenCard
                   key={token.tokenAddress}
                   token={token}
@@ -228,7 +281,7 @@ const PumpFunPage: React.FC = () => {
                 {error}
               </div>
             ) : (
-              bondingTokens.map((token) => (
+              filteredBondingTokens.map((token) => (
                 <BondingTokenCard
                   key={token.tokenAddress}
                   token={token}
@@ -254,7 +307,7 @@ const PumpFunPage: React.FC = () => {
                 {error}
               </div>
             ) : (
-              graduatedTokens.map((token) => (
+              filteredGraduatedTokens.map((token) => (
                 <GraduatedTokenCard
                 key={token.tokenAddress}
                 token={token}
