@@ -159,7 +159,7 @@ export default function DiagonalCommissionChart() {
             <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
           </div>
-          <span className="text-gray-400 text-xs">Gem 100X - GMGN</span>
+          <span className="text-gray-400 text-xs">Gem 100X - NordicX</span>
         </div>
         <div className="bg-gray-800 rounded px-2 py-1 text-xs text-gray-300 font-mono">
           nordicx.io/eth/token/<span className="text-red-400">xxxxxxxx</span>_0x123
