@@ -44,10 +44,9 @@ interface UtilityBarProps {
     onTimeFrameChange: (timeFrame: string) => void;
     onFiltersChange: (filters: Filters) => void;
     chain: string | null;
-    onChainChange: (chain: string) => void;
 }
 
-export default function UtilityBar({ setSwitch, switchTabs, onTimeFrameChange, onFiltersChange, chain, onChainChange }: UtilityBarProps) {
+export default function UtilityBar({ setSwitch, switchTabs, onTimeFrameChange, onFiltersChange, chain }: UtilityBarProps) {
     const [activeTimeFrame, setTimeFrame] = useState("1m")
     const [filters, setFilters] = useState<Filters>({
         raydium: true,
