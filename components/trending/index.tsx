@@ -37,15 +37,6 @@ export default function Trending() {
         }
     }, [searchParams, router]);
 
-    // When chain changes, update URL and localStorage
-    const handleChainChange = (newChain: string) => {
-        setChain(newChain);
-        localStorage.setItem("lastSelectedChain", newChain);
-        const params = new URLSearchParams(window.location.search);
-        params.set("chain", newChain);
-        router.replace(`?${params.toString()}`);
-    };
-
     const handleTimeFrameChange = (newTimeFrame) => {
         setTimeFrame(newTimeFrame);
     };
