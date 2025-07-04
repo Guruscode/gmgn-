@@ -3,7 +3,7 @@ import { copyToClipboard, formatNumber, truncAddress } from "@/lib/utils";
 import { getTrendingMemeCoins } from "@/services/api";
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 interface TimeData {
   '1h': number;
