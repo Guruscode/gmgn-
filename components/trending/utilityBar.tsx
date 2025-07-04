@@ -1,5 +1,5 @@
 'use client';
-import React, { useCallback, useState } from 'react'
+import React, { useState } from 'react'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -27,19 +27,30 @@ import {
 } from "@/components/ui/sheet"
 import { updateUrlParams } from '@/lib/utils';
 
+// Add Filters type
+interface Filters {
+    raydium: boolean;
+    pump: boolean;
+    moonshot: boolean;
+    risks: boolean;
+    washTraded: boolean;
+    honeypot: boolean;
+    tokenFilters: string[];
+}
+
 // Add types for props
 interface UtilityBarProps {
     setSwitch: (tab: string) => void;
     switchTabs: string;
     onTimeFrameChange: (timeFrame: string) => void;
-    onFiltersChange: (filters: any) => void;
+    onFiltersChange: (filters: Filters) => void;
     chain: string | null;
     onChainChange: (chain: string) => void;
 }
 
 export default function UtilityBar({ setSwitch, switchTabs, onTimeFrameChange, onFiltersChange, chain, onChainChange }: UtilityBarProps) {
     const [activeTimeFrame, setTimeFrame] = useState("1m")
-    const [filters, setFilters] = useState({
+    const [filters, setFilters] = useState<Filters>({
         raydium: true,
         pump: true,
         moonshot: true,
