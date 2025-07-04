@@ -11,6 +11,7 @@ import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
 import { useMemo } from 'react';
 import '@solana/wallet-adapter-react-ui/styles.css';
+import { usePathname } from "next/navigation";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,9 @@ export default function RootLayout({
     []
   );
 
+  const pathname = usePathname();
+  const isTokenDetailsPage = /^\/[a-zA-Z0-9]+\/token\/[a-zA-Z0-9]+$/.test(pathname || "");
+
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
@@ -55,7 +59,7 @@ export default function RootLayout({
                     <Header />
                   </Suspense>
                   <Suspense fallback={null}>
-                    <MemeCoinsWidget />
+                    {!isTokenDetailsPage && <MemeCoinsWidget />}
                   </Suspense>
                   <main className="flex-1">
                     <Suspense fallback={<div className="flex-1 flex items-center justify-center">Loading page...</div>}>

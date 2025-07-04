@@ -1,7 +1,13 @@
-import { Fragment } from 'react'
+import { Fragment, ReactNode } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 
-export default function Drawer({ isOpen, onClose, children }) {
+interface DrawerProps {
+    isOpen: boolean;
+    onClose: () => void;
+    children: ReactNode;
+}
+
+export default function Drawer({ isOpen, onClose, children }: DrawerProps) {
     return (
         <Transition.Root show={isOpen} as={Fragment}>
             <Dialog as="div" className="relative z-[20]" onClose={onClose}>

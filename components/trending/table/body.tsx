@@ -3,7 +3,6 @@ import { copyToClipboard, formatNumber, truncAddress } from "@/lib/utils";
 import { getTrendingMemeCoins } from "@/services/api";
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 interface TimeData {
@@ -62,24 +61,21 @@ interface Filters {
 }
 
 interface TableBodyProps {
+    chain: string | null;
     timeFrame: string;
     filters: Filters;
 }
 
-export default function TableBody({ timeFrame, filters }: TableBodyProps) {
-    const searchParams = useSearchParams();
+export default function TableBody({ chain, timeFrame, filters }: TableBodyProps) {
     const [memeCoins, setMemeCoins] = useState<MemeCoin[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-  
-
-    const getChain = useCallback(() => searchParams.get("chain") || "eth", [searchParams]);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                const data = await getTrendingMemeCoins(getChain(), 100, timeFrame);
+                const data = await getTrendingMemeCoins(chain || "eth", 100, timeFrame);
                 if (data && data.length > 0) {
                     console.log('Sample trending token object:', data[0]);
                     if (data[0].pricePercentChange) {
@@ -99,7 +95,7 @@ export default function TableBody({ timeFrame, filters }: TableBodyProps) {
         };
 
         fetchData();
-    }, [getChain, timeFrame]);
+    }, [chain, timeFrame]);
 
     const formatAge = (timestamp?: number) => {
         if (!timestamp) return "N/A";
@@ -713,7 +709,7 @@ export default function TableBody({ timeFrame, filters }: TableBodyProps) {
                         <div className="flex items-center justify-start gap-2 w-[351px] flex-[351px]">
                             <div className="">
                                 <div className="text-[13px] uppercase text-accent-green">No</div>
-                                {getChain() == "sol" ? (
+                                {chain == "sol" ? (
                                     <div className="text-accent-1 font-[300] text-[12px]">NoMint</div>
                                 ) : (
                                     <div className="text-accent-1 font-[300] text-[12px]">Honeypot</div>
@@ -721,7 +717,7 @@ export default function TableBody({ timeFrame, filters }: TableBodyProps) {
                             </div>
                             <div className="">
                                 <div className="text-[13px] uppercase text-accent-green">yes</div>
-                                {getChain() == "sol" ? (
+                                {chain == "sol" ? (
                                     <div className="text-accent-1 font-[300] text-[12px]">Blacklist</div>
                                 ) : (
                                     <div className="text-accent-1 font-[300] text-[12px]">Verified</div>
@@ -729,7 +725,7 @@ export default function TableBody({ timeFrame, filters }: TableBodyProps) {
                             </div>
                             <div className="">
                                 <div className="text-[13px] uppercase text-accent-green">yes</div>
-                                {getChain() == "sol" ? (
+                                {chain == "sol" ? (
                                     <div className="text-accent-1 font-[300] text-[12px]">Burnt</div>
                                 ) : (
                                     <div className="text-accent-1 font-[300] text-[12px]">Renounced</div>
@@ -737,7 +733,7 @@ export default function TableBody({ timeFrame, filters }: TableBodyProps) {
                             </div>
                             <div className="">
                                 <div className="text-[13px] uppercase text-accent-green">?</div>
-                                {getChain() == "sol" ? (
+                                {chain == "sol" ? (
                                     <div className="text-accent-1 font-[300] text-[12px]">Top 10</div>
                                 ) : (
                                     <div className="text-accent-1 font-[300] text-[12px]">Locked</div>
@@ -767,7 +763,7 @@ export default function TableBody({ timeFrame, filters }: TableBodyProps) {
                     <td className="py-3 px-2 sticky right-0 z-[1] bg-accent-2">
                         <div className="md:w-[111px] md:flex-[111px] w-[48px] flex-[48px]">
                             <button className="flex items-center justify-center w-full gap-1 hover:bg-[rgb(238,239,242)] hover:text-[rgb(41,44,51)]">
-                                {getChain() == "sol" ? (
+                                {chain == "sol" ? (
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" fill="#88D693" viewBox="0 0 16 16">
                                         <g clipPath="url(#clip0_9339_171)">
                                             <path d="M3.229 9.046L9.756 0 8.452 6.637h3.757a.2.2 0 01.162.317L5.844 16 7.03 9.363H3.39a.2.2 0 01-.161-.317z"></path>
