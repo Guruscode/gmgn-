@@ -55,7 +55,7 @@ export default function Trending() {
 
     return (
         <div className='h-[90vh] overflow-hidden'>
-            <UtilityBar setSwitch={setSwitch} switchTabs={switchTabs} onTimeFrameChange={handleTimeFrameChange} onFiltersChange={handleFiltersChange} chain={chain} onChainChange={handleChainChange} />
+            <UtilityBar setSwitch={setSwitch} switchTabs={switchTabs} onTimeFrameChange={handleTimeFrameChange} onFiltersChange={handleFiltersChange} chain={chain} />
             {chain ? (
                 <Table chain={chain} timeFrame={timeFrame} filters={filters} />
             ) : (
