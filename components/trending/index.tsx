@@ -3,10 +3,11 @@ import { useEffect, useState } from "react";
 import UtilityBar from "./utilityBar";
 import Footer from "../common/footer";
 import Table from "./table/table1";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 export default function Trending() {
     const searchParams = useSearchParams();
+    const router = useRouter();
     const [switchTabs, setSwitch] = useState('1'); // Default to '1'
     const [timeFrame, setTimeFrame] = useState('1m'); // Default to '1m'
     const [filters, setFilters] = useState({
@@ -18,27 +19,32 @@ export default function Trending() {
         honeypot: false,
         tokenFilters: ["", "", "", "", ""]
     });
+    const [chain, setChain] = useState<string | null>(null);
 
+    // On mount, set chain from URL or localStorage
     useEffect(() => {
-        // Initialize from search params (client-side only)
-        const tab = searchParams.get("tab");
-        if (tab) {
-            setSwitch(tab);
-        } else if (window.innerWidth < 768) {
-            setSwitch("2");
+        const urlChain = searchParams.get("chain");
+        if (urlChain) {
+            setChain(urlChain);
+            localStorage.setItem("lastSelectedChain", urlChain);
+        } else {
+            const lastChain = localStorage.getItem("lastSelectedChain") || "sol";
+            setChain(lastChain);
+            // Update URL if missing
+            const params = new URLSearchParams(window.location.search);
+            params.set("chain", lastChain);
+            router.replace(`?${params.toString()}`);
         }
+    }, [searchParams, router]);
 
-        const handleResize = () => {
-            if (window.innerWidth < 768) {
-                setSwitch("2");
-            } else {
-                setSwitch(tab || "1"); // Revert to tab param or default '1'
-            }
-        };
-
-        window.addEventListener("resize", handleResize);
-        return () => window.removeEventListener("resize", handleResize);
-    }, [searchParams]);
+    // When chain changes, update URL and localStorage
+    const handleChainChange = (newChain: string) => {
+        setChain(newChain);
+        localStorage.setItem("lastSelectedChain", newChain);
+        const params = new URLSearchParams(window.location.search);
+        params.set("chain", newChain);
+        router.replace(`?${params.toString()}`);
+    };
 
     const handleTimeFrameChange = (newTimeFrame) => {
         setTimeFrame(newTimeFrame);
@@ -49,8 +55,12 @@ export default function Trending() {
 
     return (
         <div className='h-[90vh] overflow-hidden'>
-            <UtilityBar setSwitch={setSwitch} switchTabs={switchTabs} onTimeFrameChange={handleTimeFrameChange} onFiltersChange={handleFiltersChange} />
-            <Table timeFrame={timeFrame} filters={filters} />
+            <UtilityBar setSwitch={setSwitch} switchTabs={switchTabs} onTimeFrameChange={handleTimeFrameChange} onFiltersChange={handleFiltersChange} chain={chain} onChainChange={handleChainChange} />
+            {chain ? (
+                <Table chain={chain} timeFrame={timeFrame} filters={filters} />
+            ) : (
+                <div className="flex justify-center items-center h-full">Loading...</div>
+            )}
             <Footer />
         </div>
     );

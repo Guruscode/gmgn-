@@ -13,18 +13,19 @@ interface Filters {
 }
 
 interface TableProps {
+    chain: string | null;
     timeFrame: string;
     filters: Filters;
 }
 
-export default function Table({ timeFrame, filters }: TableProps) {
+export default function Table({ chain, timeFrame, filters }: TableProps) {
     return (
         <div className='w-full md:px-[1.3rem] h-[781px] gap-5 overflow-y-auto relative pb-[50px]'>
             <div className="relative overflow-auto h-full">
                 <table className="bg-accent-2">
                     <Colgroup />
                     <TableHead />
-                    <TableBody timeFrame={timeFrame} filters={filters} />
+                    <TableBody chain={chain} timeFrame={timeFrame} filters={filters} />
                 </table>
             </div>
         </div >

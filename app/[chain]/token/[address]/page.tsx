@@ -116,27 +116,27 @@ const TokenPage: React.FC = () => {
           pairAddress: pair.pairAddress,
           exchangeName: pair.exchangeName || 'Unknown',
           exchangeLogo: pair.exchangeLogo,
-          pairLabel: `${pair.baseToken.tokenSymbol || 'Unknown'}/${pair.quoteToken.tokenSymbol || 'Unknown'}`,
+          pairLabel: `${pair.baseToken?.tokenSymbol || 'Unknown'}/${pair.quoteToken?.tokenSymbol || 'Unknown'}`,
           liquidityUsd: pair.liquidityUsd || 0,
           usdPrice: pair.usdPrice,
           usdPrice24hrPercentChange: pair.usdPrice24hrPercentChange,
           volume24hrUsd: pair.volume24hrUsd,
           baseToken: {
             ...pair.baseToken,
-            symbol: pair.baseToken.tokenSymbol || 'Unknown',
-            address: pair.baseToken.tokenAddress
+            symbol: pair.baseToken?.tokenSymbol || 'Unknown',
+            address: pair.baseToken?.tokenAddress
           },
           quoteToken: {
             ...pair.quoteToken,
-            symbol: pair.quoteToken.tokenSymbol || 'Unknown',
-            address: pair.quoteToken.tokenAddress
+            symbol: pair.quoteToken?.tokenSymbol || 'Unknown',
+            address: pair.quoteToken?.tokenAddress
           },
           pair: Array.isArray(pair.pair)
             ? pair.pair.map((token: PairToken) => ({
                 ...token,
-                symbol: token.tokenSymbol || 'Unknown',
-                address: token.tokenAddress,
-                totalSupply: token.totalSupply
+                symbol: token?.tokenSymbol || 'Unknown',
+                address: token?.tokenAddress,
+                totalSupply: token?.totalSupply
               }))
             : [],
         }));
@@ -146,7 +146,7 @@ const TokenPage: React.FC = () => {
 
         if (!tokenInfo && normalizedPairs[0]?.pair && Array.isArray(normalizedPairs[0].pair) && normalizedPairs[0].pair.length > 0) {
           const currentToken = normalizedPairs[0].pair.find(
-            (token) => typeof tokenAddress === "string" && token.tokenAddress?.toLowerCase() === tokenAddress.toLowerCase()
+            (token) => typeof tokenAddress === "string" && token?.tokenAddress?.toLowerCase() === tokenAddress.toLowerCase()
           );
           const fallbackToken = normalizedPairs[0].pair[0];
           setTokenInfo({
