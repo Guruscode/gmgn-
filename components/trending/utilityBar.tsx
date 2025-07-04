@@ -268,11 +268,6 @@ export default function UtilityBar({ setSwitch, switchTabs, onTimeFrameChange, o
                     </div>}
             </div>
 
-            <div className="flex gap-2">
-                <button onClick={() => onChainChange('sol')} className={chain === 'sol' ? 'font-bold underline' : ''}>SOL</button>
-                <button onClick={() => onChainChange('eth')} className={chain === 'eth' ? 'font-bold underline' : ''}>ETH</button>
-            </div>
-
         </div >
     )
 }
